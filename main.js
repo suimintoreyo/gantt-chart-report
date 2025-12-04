@@ -1,6 +1,168 @@
 const STORAGE_KEY = 'gantt-app-state-v1';
 const AUTO_SAVE_DELAY = 1200;
 
+const DEFAULT_STATE = {
+  projects: [
+    {
+      id: 'project-1',
+      name: 'MVP 開発',
+      owner: 'チームA',
+      startDate: '2024-01-01',
+      endDate: '2024-01-21',
+      status: 'active',
+    },
+  ],
+  tasks: [
+    {
+      id: 'task-1',
+      projectId: 'project-1',
+      name: '要件整理',
+      category: '計画',
+      assignee: '山田',
+      plannedStart: '2023-12-25',
+      plannedEnd: '2023-12-30',
+      progress: 100,
+      status: 'completed',
+      priority: 'medium',
+      notes: 'ヒアリング完了',
+    },
+    {
+      id: 'task-2',
+      projectId: 'project-1',
+      name: 'UI モック作成',
+      category: '設計',
+      assignee: '佐藤',
+      plannedStart: '2023-12-31',
+      plannedEnd: '2024-01-05',
+      progress: 45,
+      status: 'in_progress',
+      priority: 'high',
+      notes: 'トップ画面ドラフト',
+    },
+    {
+      id: 'task-3',
+      projectId: 'project-1',
+      name: 'ガント描画実装',
+      category: '開発',
+      assignee: '鈴木',
+      plannedStart: '2024-01-06',
+      plannedEnd: '2024-01-12',
+      progress: 10,
+      status: 'not_started',
+      priority: 'medium',
+      notes: '',
+    },
+  ],
+  workLogs: [
+    {
+      id: 'log-1',
+      taskId: 'task-2',
+      date: '2024-01-03',
+      workNote: 'プロジェクトセットアップ',
+      hours: 2,
+      progressAfter: 10,
+    },
+  ],
+  adhocTasks: [
+    {
+      id: 'adhoc-1',
+      date: '2024-01-02',
+      title: '問い合わせ対応',
+      detail: '顧客からの仕様確認',
+      hours: 1,
+      relatedProjectId: 'project-1',
+    },
+  ],
+  uiPreferences: {
+    ganttZoomLevel: 1,
+    theme: 'dark',
+  },
+};
+
+function createSampleState() {
+  return structuredClone(DEFAULT_STATE);
+}
+
+function saveState(state, storage = (typeof localStorage !== 'undefined' ? localStorage : null)) {
+  if (!storage) return;
+  storage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadState(storage = (typeof localStorage !== 'undefined' ? localStorage : null)) {
+  if (storage) {
+    const stored = storage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        console.warn('state parse failed', e);
+      }
+    }
+  }
+  return createSampleState();
+}
+
+function parseDate(value) {
+  return new Date(value + 'T00:00:00');
+}
+
+function calculateTaskDelay(task, today) {
+  if (!task || task.progress >= 100) return null;
+  const todayDate = parseDate(today);
+  const plannedEnd = parseDate(task.plannedEnd);
+  if (plannedEnd >= todayDate) return null;
+  const diff = Math.round((todayDate - plannedEnd) / (1000 * 60 * 60 * 24));
+  return diff > 0 ? diff : null;
+}
+
+function getDelayedTasks(tasks, today) {
+  return tasks.filter((task) => calculateTaskDelay(task, today));
+}
+
+function getTasksInPeriod(tasks, startDate, endDate) {
+  const start = parseDate(startDate);
+  const end = parseDate(endDate);
+  return tasks.filter((task) => {
+    const taskStart = parseDate(task.plannedStart);
+    const taskEnd = parseDate(task.plannedEnd);
+    return taskEnd >= start && taskStart <= end;
+  });
+}
+
+function generateReport(appState, options) {
+  const { from, to, projectIds, includeAdhoc = false } = options;
+  const targetProjects = projectIds && projectIds.length ? projectIds : appState.projects.map((p) => p.id);
+  const tasks = appState.tasks.filter((t) => targetProjects.includes(t.projectId));
+  const completed = tasks.filter((t) => t.progress >= 100 && t.plannedEnd >= from && t.plannedEnd <= to);
+  const progressing = tasks.filter((t) => t.progress < 100 && t.progress > 0 && t.plannedStart <= to && t.plannedEnd >= from);
+  const delayed = getDelayedTasks(tasks, to);
+  const adhoc = includeAdhoc
+    ? appState.adhocTasks.filter((a) => a.date >= from && a.date <= to && (!projectIds || projectIds.includes(a.relatedProjectId || '')))
+    : [];
+
+  const completedSection = completed.length ? completed.map((t) => `- ${t.name}`).join('\n') : 'なし';
+  const progressingSection = progressing.length
+    ? progressing.map((t) => `- ${t.name} (${t.progress}%)`).join('\n')
+    : 'なし';
+  const delayedSection = delayed.length
+    ? delayed.map((t) => `- ${t.name} (予定 ${t.plannedEnd})`).join('\n')
+    : 'なし';
+  const adhocSection = adhoc.length ? adhoc.map((a) => `- ${a.title} (${a.hours || '?'}h)`).join('\n') : '';
+
+  return [
+    `【期間】${from} 〜 ${to}`,
+    `【進捗サマリー】完了 ${completed.length} / 進行中 ${progressing.length} / 遅延 ${delayed.length}`,
+    `【完了タスク】\n${completedSection}`,
+    `【進行中】\n${progressingSection}`,
+    `【遅延懸念】\n${delayedSection}`,
+    includeAdhoc ? `【一時タスク】\n${adhocSection || 'なし'}` : null,
+    '次回までの予定：進行中タスクを優先し、依存関係に留意して進めます。',
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+// --- 以下、ブラウザ向け UI ロジック ---
 /** @type {AppState} */
 let appState;
 let activeProjectId = '';
@@ -11,114 +173,22 @@ let undoStack = [];
 let redoStack = [];
 let currentSort = { key: 'plannedStart', dir: 'asc' };
 
-// --- 初期データ ---
-function createSampleState() {
-  const today = new Date();
-  const format = (d) => d.toISOString().slice(0, 10);
-  const projectId = crypto.randomUUID();
-  return {
-    projects: [{
-      id: projectId,
-      name: 'MVP 開発',
-      owner: 'チームA',
-      startDate: format(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7)),
-      endDate: format(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 21)),
-      status: 'active',
-    }],
-    tasks: [
-      {
-        id: crypto.randomUUID(),
-        projectId,
-        name: '要件整理',
-        category: '計画',
-        assignee: '山田',
-        plannedStart: format(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7)),
-        plannedEnd: format(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2)),
-        progress: 100,
-        status: 'completed',
-        priority: 'medium',
-        notes: 'ヒアリング完了',
-      },
-      {
-        id: crypto.randomUUID(),
-        projectId,
-        name: 'UI モック作成',
-        category: '設計',
-        assignee: '佐藤',
-        plannedStart: format(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2)),
-        plannedEnd: format(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3)),
-        progress: 45,
-        status: 'in_progress',
-        priority: 'high',
-        notes: 'トップ画面ドラフト',
-      },
-      {
-        id: crypto.randomUUID(),
-        projectId,
-        name: 'ガント描画実装',
-        category: '開発',
-        assignee: '鈴木',
-        plannedStart: format(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)),
-        plannedEnd: format(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7)),
-        progress: 10,
-        status: 'not_started',
-        priority: 'medium',
-        notes: '',
-      },
-    ],
-    workLogs: [
-      {
-        id: crypto.randomUUID(),
-        taskId: '',
-        date: format(today),
-        workNote: 'プロジェクトセットアップ',
-        hours: 2,
-        progressAfter: 10,
-      },
-    ],
-    adhocTasks: [
-      {
-        id: crypto.randomUUID(),
-        date: format(today),
-        title: '問い合わせ対応',
-        detail: '顧客からの仕様確認',
-        hours: 1,
-        relatedProjectId: projectId,
-      },
-    ],
-    uiPreferences: {
-      ganttZoomLevel: 1,
-      theme: 'dark',
-    },
-  };
+function formatDate(date) {
+  return date.toISOString().slice(0, 10);
 }
-
-function loadState() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch (e) {
-      console.warn('state parse failed', e);
-    }
-  }
-  return createSampleState();
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
 }
-
-function saveState(manual = false) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-  updateSaveStatus(manual ? '手動保存しました' : '保存しました');
+function dateDiff(start, end) {
+  return Math.round((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24));
 }
-
-function scheduleSave() {
-  clearTimeout(autoSaveTimer);
-  autoSaveTimer = setTimeout(() => saveState(false), AUTO_SAVE_DELAY);
-  updateSaveStatus('保存待機中...');
-}
+function clamp(num, min, max) { return Math.min(Math.max(num, min), max); }
 
 function updateSaveStatus(text) {
   const el = document.getElementById('saveStatus');
-  el.textContent = text;
+  if (el) el.textContent = text;
 }
 
 function pushUndo() {
@@ -147,21 +217,12 @@ function redo() {
   renderAll();
 }
 
-// --- ユーティリティ ---
-function formatDate(date) {
-  return date.toISOString().slice(0, 10);
+function scheduleSave() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => saveState(appState), AUTO_SAVE_DELAY);
+  updateSaveStatus('保存待機中...');
 }
-function addDays(date, days) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
-function dateDiff(start, end) {
-  return Math.round((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24));
-}
-function clamp(num, min, max) { return Math.min(Math.max(num, min), max); }
 
-// --- レンダリング ---
 function renderAll() {
   renderProjectOptions();
   renderTaskTable();
@@ -169,11 +230,13 @@ function renderAll() {
   renderSidePanel();
   renderTabs();
   renderSummary();
-  document.getElementById('ganttZoom').value = appState.uiPreferences.ganttZoomLevel || 1;
+  const zoomInput = document.getElementById('ganttZoom');
+  if (zoomInput) zoomInput.value = appState.uiPreferences.ganttZoomLevel || 1;
 }
 
 function renderProjectOptions() {
   const select = document.getElementById('projectSelect');
+  if (!select) return;
   select.innerHTML = '';
   appState.projects.forEach((p) => {
     const opt = document.createElement('option');
@@ -194,6 +257,7 @@ function renderSummary() {
   const todayTasks = tasks.filter((t) => t.status !== 'completed' && t.plannedStart <= today && t.plannedEnd >= today);
   const delayed = tasks.filter((t) => t.status !== 'completed' && t.plannedEnd < today);
   const summaryEl = document.getElementById('summary');
+  if (!summaryEl) return;
   summaryEl.innerHTML = `
     <div class="tooltip">今日やるタスク: <strong>${todayTasks.length}</strong></div>
     <div class="tooltip">遅延: <strong>${delayed.length}</strong></div>
@@ -202,6 +266,7 @@ function renderSummary() {
 
 function renderTaskTable() {
   const container = document.getElementById('taskTable');
+  if (!container) return;
   container.innerHTML = '';
   const header = document.createElement('div');
   header.className = 'task-header';
@@ -217,8 +282,8 @@ function renderTaskTable() {
   });
   container.appendChild(header);
 
-  const showCompleted = document.getElementById('showCompleted').checked;
-  const search = document.getElementById('taskSearch').value.toLowerCase();
+  const showCompleted = document.getElementById('showCompleted')?.checked;
+  const search = (document.getElementById('taskSearch')?.value || '').toLowerCase();
   const tasks = appState.tasks
     .filter((t) => t.projectId === activeProjectId)
     .filter((t) => showCompleted || t.status !== 'completed')
@@ -363,9 +428,10 @@ function addTask() {
 function renderGantt() {
   const header = document.getElementById('ganttHeader');
   const body = document.getElementById('ganttBody');
+  if (!header || !body) return;
   header.innerHTML = '';
   body.innerHTML = '';
-  const zoom = parseFloat(document.getElementById('ganttZoom').value || 1);
+  const zoom = parseFloat(document.getElementById('ganttZoom')?.value || 1);
   appState.uiPreferences.ganttZoomLevel = zoom;
 
   const { startDate, endDate } = getRange();
@@ -402,6 +468,7 @@ function renderGantt() {
   });
 
   const todayLine = document.getElementById('todayLine');
+  if (!todayLine) return;
   const todayIdx = dateDiff(startDate, formatDate(new Date()));
   if (todayIdx >= 0 && todayIdx <= days) {
     todayLine.style.display = 'block';
@@ -435,6 +502,7 @@ function highlightSelection(taskId) {
 
 function renderSidePanel() {
   const container = document.getElementById('sideContent');
+  if (!container) return;
   container.innerHTML = '';
   const task = appState.tasks.find((t) => t.id === selectedTaskId);
   if (!task) {
@@ -504,6 +572,7 @@ function renderTabs() {
 
 function renderWorkLogs() {
   const tab = document.getElementById('workLogTab');
+  if (!tab) return;
   const logs = appState.workLogs.filter((w) => {
     if (!activeProjectId) return true;
     const task = appState.tasks.find((t) => t.id === w.taskId);
@@ -523,132 +592,66 @@ function renderWorkLogs() {
   }).join('');
   tab.innerHTML = `
     <table class="table">
-      <thead><tr><th>日付</th><th>タスク</th><th>内容</th><th>時間</th><th>進捗%</th></tr></thead>
-      <tbody>${rows || '<tr><td colspan="5" class="tooltip">ログなし</td></tr>'}</tbody>
-    </table>`;
+      <thead><tr><th>日付</th><th>タスク</th><th>内容</th><th>時間</th><th>進捗</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="5">ログなし</td></tr>'}</tbody>
+    </table>
+  `;
 }
 
 function renderAdhoc() {
   const tab = document.getElementById('adhocTab');
-  const rows = appState.adhocTasks.map((a) => `
-    <tr>
-      <td>${a.date}</td>
-      <td>${a.title}</td>
-      <td>${a.detail || ''}</td>
-      <td>${a.hours || '-'}h</td>
-      <td><button class="ghost" data-id="${a.id}">🗑</button></td>
-    </tr>
-  `).join('');
+  if (!tab) return;
+  const rows = appState.adhocTasks
+    .filter((a) => !activeProjectId || a.relatedProjectId === activeProjectId)
+    .map((a) => `
+      <tr>
+        <td>${a.date}</td>
+        <td>${a.title}</td>
+        <td>${a.detail || '-'}</td>
+        <td>${a.hours || '-'}h</td>
+      </tr>
+    `).join('');
   tab.innerHTML = `
     <table class="table">
-      <thead><tr><th>日付</th><th>タイトル</th><th>詳細</th><th>時間</th><th></th></tr></thead>
-      <tbody>${rows || '<tr><td colspan="5" class="tooltip">一時タスクなし</td></tr>'}</tbody>
-    </table>`;
-  tab.querySelectorAll('button[data-id]').forEach((btn) => btn.addEventListener('click', () => deleteAdhoc(btn.dataset.id)));
+      <thead><tr><th>日付</th><th>内容</th><th>詳細</th><th>時間</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="4">なし</td></tr>'}</tbody>
+    </table>
+  `;
 }
 
 function addWorkLog(taskId, note, hours) {
-  if (!note) return showToast('ログ内容を入力してください');
   pushUndo();
-  appState.workLogs.unshift({
+  const log = {
     id: crypto.randomUUID(),
     taskId,
     date: formatDate(new Date()),
     workNote: note,
     hours,
-    progressAfter: appState.tasks.find((t) => t.id === taskId)?.progress || undefined,
-  });
+    progressAfter: appState.tasks.find((t) => t.id === taskId)?.progress || 0,
+  };
+  appState.workLogs.push(log);
   renderTabs();
   scheduleSave();
-  showToast('作業ログを追加しました');
 }
 
 function addAdhoc() {
   pushUndo();
-  const date = formatDate(new Date());
-  const title = prompt('一時タスク名');
-  if (!title) return;
-  appState.adhocTasks.unshift({
+  const newAdhoc = {
     id: crypto.randomUUID(),
-    date,
-    title,
+    date: formatDate(new Date()),
+    title: '一時タスク',
     detail: '',
     hours: 1,
     relatedProjectId: activeProjectId,
-  });
-  renderTabs();
-  scheduleSave();
-}
-
-function deleteAdhoc(id) {
-  pushUndo();
-  appState.adhocTasks = appState.adhocTasks.filter((a) => a.id !== id);
-  renderTabs();
-  scheduleSave();
-}
-
-// --- プロジェクト ---
-function openProjectModal(mode) {
-  const modal = document.getElementById('projectModal');
-  modal.classList.remove('hidden');
-  const title = document.getElementById('projectModalTitle');
-  title.textContent = mode === 'add' ? 'プロジェクト追加' : 'プロジェクト編集';
-  if (mode === 'edit') {
-    const p = appState.projects.find((p) => p.id === activeProjectId);
-    document.getElementById('projectNameInput').value = p.name;
-    document.getElementById('projectStartInput').value = p.startDate;
-    document.getElementById('projectEndInput').value = p.endDate;
-    document.getElementById('projectStatusInput').value = p.status;
-  } else {
-    document.getElementById('projectNameInput').value = '';
-    document.getElementById('projectStartInput').value = formatDate(new Date());
-    document.getElementById('projectEndInput').value = formatDate(addDays(new Date(), 14));
-    document.getElementById('projectStatusInput').value = 'planned';
-  }
-  modal.dataset.mode = mode;
-}
-
-function closeProjectModal() {
-  document.getElementById('projectModal').classList.add('hidden');
-}
-
-function saveProjectFromModal() {
-  const mode = document.getElementById('projectModal').dataset.mode;
-  const name = document.getElementById('projectNameInput').value.trim();
-  if (!name) return showToast('プロジェクト名を入力してください');
-  const data = {
-    name,
-    startDate: document.getElementById('projectStartInput').value,
-    endDate: document.getElementById('projectEndInput').value,
-    status: document.getElementById('projectStatusInput').value,
   };
-  pushUndo();
-  if (mode === 'add') {
-    const id = crypto.randomUUID();
-    appState.projects.push({ id, ...data });
-    activeProjectId = id;
-  } else {
-    const p = appState.projects.find((p) => p.id === activeProjectId);
-    Object.assign(p, data);
-  }
-  closeProjectModal();
-  renderAll();
-  scheduleSave();
-}
-
-function deleteProject() {
-  if (!activeProjectId) return;
-  if (!confirm('プロジェクトを削除しますか？')) return;
-  pushUndo();
-  appState.projects = appState.projects.filter((p) => p.id !== activeProjectId);
-  appState.tasks = appState.tasks.filter((t) => t.projectId !== activeProjectId);
-  activeProjectId = appState.projects[0]?.id || '';
-  renderAll();
+  appState.adhocTasks.push(newAdhoc);
+  renderAdhoc();
   scheduleSave();
 }
 
 function renderReportProjectOptions() {
   const select = document.getElementById('reportProject');
+  if (!select) return;
   select.innerHTML = '<option value="all">すべて</option>';
   appState.projects.forEach((p) => {
     const opt = document.createElement('option');
@@ -658,26 +661,14 @@ function renderReportProjectOptions() {
   });
 }
 
-// --- レポート生成 ---
-function generateReport() {
-  const start = document.getElementById('reportStart').value || formatDate(addDays(new Date(), -7));
-  const end = document.getElementById('reportEnd').value || formatDate(new Date());
+function handleReportGenerate() {
+  const start = document.getElementById('reportStart').value;
+  const end = document.getElementById('reportEnd').value;
   const project = document.getElementById('reportProject').value;
   const includeAdhoc = document.getElementById('reportIncludeAdhoc').checked;
-
-  const tasks = appState.tasks.filter((t) => (project === 'all' ? true : t.projectId === project));
-  const completed = tasks.filter((t) => t.status === 'completed');
-  const progressing = tasks.filter((t) => t.status === 'in_progress');
-  const delayed = tasks.filter((t) => t.status !== 'completed' && t.plannedEnd < end);
-  const adhoc = includeAdhoc ? appState.adhocTasks.filter((a) => a.date >= start && a.date <= end) : [];
-
-  const text = `【期間】${start} 〜 ${end}
-【進捗サマリー】完了 ${completed.length} / 進行中 ${progressing.length} / 遅延 ${delayed.length}
-【完了タスク】\n- ${completed.map((t) => t.name).join('\n- ') || 'なし'}
-【進行中】\n- ${progressing.map((t) => `${t.name} (${t.progress}%)`).join('\n- ') || 'なし'}
-【遅延懸念】\n- ${delayed.map((t) => `${t.name} (予定 ${t.plannedEnd})`).join('\n- ') || 'なし'}
-${adhoc.length ? `【一時タスク】\n- ${adhoc.map((a) => `${a.title} (${a.hours || '?'}h)`).join('\n- ')}` : ''}
-次回までの予定：進行中タスクを優先し、依存関係に留意して進めます。`;
+  const options = { from: start, to: end, includeAdhoc };
+  if (project !== 'all') options.projectIds = [project];
+  const text = generateReport(appState, options);
   const textarea = document.getElementById('reportText');
   textarea.value = text.trim();
   textarea.focus();
@@ -708,7 +699,7 @@ function setupShortcuts() {
     if (e.isComposing) return;
     if (e.ctrlKey && e.key.toLowerCase() === 's') {
       e.preventDefault();
-      saveState(true);
+      saveState(appState);
       showToast('保存しました');
     }
     if (e.ctrlKey && e.key.toLowerCase() === 'f') {
@@ -723,7 +714,7 @@ function setupShortcuts() {
     const reportOpen = !document.getElementById('reportModal').classList.contains('hidden');
     if (reportOpen && e.ctrlKey && e.key === 'Enter') {
       e.preventDefault();
-      generateReport();
+      handleReportGenerate();
     }
   });
 }
@@ -747,12 +738,12 @@ function bindEvents() {
   document.getElementById('ganttZoom').addEventListener('input', renderGantt);
   document.getElementById('closeSidePanel').addEventListener('click', () => { selectedTaskId = ''; renderSidePanel(); highlightSelection(''); });
   document.getElementById('adhocFloat').addEventListener('click', addAdhoc);
-  document.getElementById('reportBtn').addEventListener('click', () => { openReportModal(); generateReport(); });
+  document.getElementById('reportBtn').addEventListener('click', () => { openReportModal(); handleReportGenerate(); });
   document.getElementById('closeReport').addEventListener('click', closeReportModal);
-  document.getElementById('generateReport').addEventListener('click', generateReport);
+  document.getElementById('generateReport').addEventListener('click', handleReportGenerate);
   document.getElementById('selectReport').addEventListener('click', () => { const ta = document.getElementById('reportText'); ta.focus(); ta.select(); });
   document.getElementById('copyReport').addEventListener('click', () => { const ta = document.getElementById('reportText'); ta.select(); document.execCommand('copy'); showToast('コピーしました'); });
-  document.getElementById('manualSaveBtn').addEventListener('click', () => { saveState(true); showToast('保存しました'); });
+  document.getElementById('manualSaveBtn').addEventListener('click', () => { saveState(appState); showToast('保存しました'); });
   document.getElementById('addProjectBtn').addEventListener('click', () => openProjectModal('add'));
   document.getElementById('editProjectBtn').addEventListener('click', () => openProjectModal('edit'));
   document.getElementById('deleteProjectBtn').addEventListener('click', deleteProject);
@@ -767,6 +758,62 @@ function switchTab(tab) {
   document.getElementById('adhocTab').classList.toggle('hidden', tab !== 'adhoc');
 }
 
+function openProjectModal(mode) {
+  const modal = document.getElementById('projectModal');
+  modal.classList.remove('hidden');
+  modal.dataset.mode = mode;
+  if (mode === 'edit') {
+    const project = appState.projects.find((p) => p.id === activeProjectId);
+    document.getElementById('projectNameInput').value = project?.name || '';
+    document.getElementById('projectStartInput').value = project?.startDate || '';
+    document.getElementById('projectEndInput').value = project?.endDate || '';
+    document.getElementById('projectStatusInput').value = project?.status || 'planned';
+  } else {
+    document.getElementById('projectNameInput').value = '';
+    document.getElementById('projectStartInput').value = '';
+    document.getElementById('projectEndInput').value = '';
+    document.getElementById('projectStatusInput').value = 'planned';
+  }
+}
+
+function closeProjectModal() {
+  document.getElementById('projectModal').classList.add('hidden');
+}
+
+function saveProjectFromModal() {
+  const mode = document.getElementById('projectModal').dataset.mode;
+  const name = document.getElementById('projectNameInput').value || '新規プロジェクト';
+  const startDate = document.getElementById('projectStartInput').value || formatDate(new Date());
+  const endDate = document.getElementById('projectEndInput').value || formatDate(addDays(new Date(), 7));
+  const status = document.getElementById('projectStatusInput').value;
+  if (mode === 'edit') {
+    const project = appState.projects.find((p) => p.id === activeProjectId);
+    if (project) {
+      project.name = name;
+      project.startDate = startDate;
+      project.endDate = endDate;
+      project.status = status;
+    }
+  } else {
+    const newProject = { id: crypto.randomUUID(), name, startDate, endDate, status };
+    appState.projects.push(newProject);
+    activeProjectId = newProject.id;
+  }
+  renderAll();
+  scheduleSave();
+  closeProjectModal();
+}
+
+function deleteProject() {
+  if (!activeProjectId) return;
+  pushUndo();
+  appState.projects = appState.projects.filter((p) => p.id !== activeProjectId);
+  appState.tasks = appState.tasks.filter((t) => t.projectId !== activeProjectId);
+  activeProjectId = appState.projects[0]?.id || '';
+  renderAll();
+  scheduleSave();
+}
+
 function init() {
   appState = loadState();
   activeProjectId = appState.projects[0]?.id || '';
@@ -775,9 +822,25 @@ function init() {
   setupShortcuts();
 }
 
-window.addEventListener('load', init);
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', init);
+}
 
-// --- 型定義（参考） ---
+if (typeof module !== 'undefined') {
+  module.exports = {
+    STORAGE_KEY,
+    DEFAULT_STATE,
+    createSampleState,
+    saveState,
+    loadState,
+    calculateTaskDelay,
+    getDelayedTasks,
+    getTasksInPeriod,
+    generateReport,
+  };
+}
+
+// --- 型定義参考） ---
 /**
  * @typedef {'planned' | 'active' | 'completed' | 'on_hold'} ProjectStatus
  * @typedef {{ id: string; name: string; owner?: string; startDate: string; endDate: string; status: ProjectStatus; }} Project
