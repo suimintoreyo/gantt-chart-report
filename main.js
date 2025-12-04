@@ -538,6 +538,33 @@ function calculateBarPlacement(rangeStart, totalDays, taskStart, taskEnd) {
   };
 }
 
+/**
+ * ドラッグ操作で適用する開始日・終了日のドラフト値を算出する
+ * @param {Task} task
+ * @param {number} deltaDays
+ * @param {'move' | 'start' | 'end'} dragMode
+ */
+function resolveDragDates(task, deltaDays, dragMode) {
+  if (dragMode === 'move') {
+    const shifted = shiftTaskDates(task, deltaDays);
+    return { start: shifted.plannedStart, end: shifted.plannedEnd };
+  }
+
+  if (dragMode === 'start') {
+    const candidate = formatDate(addDays(task.plannedStart, deltaDays));
+    const safeStart = parseDate(candidate) > parseDate(task.plannedEnd) ? task.plannedEnd : candidate;
+    return { start: safeStart, end: task.plannedEnd };
+  }
+
+  if (dragMode === 'end') {
+    const candidate = formatDate(addDays(task.plannedEnd, deltaDays));
+    const safeEnd = parseDate(candidate) < parseDate(task.plannedStart) ? task.plannedStart : candidate;
+    return { start: task.plannedStart, end: safeEnd };
+  }
+
+  return { start: task.plannedStart, end: task.plannedEnd };
+}
+
 function updateBarPosition(bar, rangeStart, totalDays, taskStart, taskEnd) {
   const placement = calculateBarPlacement(rangeStart, totalDays, taskStart, taskEnd);
   bar.style.left = `${placement.left}%`;
@@ -565,18 +592,9 @@ function attachBarDrag(bar, task, timeline) {
     if (deltaDays === 0 && !hasMoved) return;
     hasMoved = hasMoved || deltaDays !== 0;
 
-    if (dragMode === 'move') {
-      currentStart = addDays(task.plannedStart, deltaDays);
-      currentEnd = addDays(task.plannedEnd, deltaDays);
-    } else if (dragMode === 'start') {
-      const tentative = addDays(task.plannedStart, deltaDays);
-      currentStart = parseDate(formatDate(tentative)) > parseDate(task.plannedEnd) ? parseDate(task.plannedEnd) : tentative;
-      currentEnd = parseDate(task.plannedEnd);
-    } else if (dragMode === 'end') {
-      const tentative = addDays(task.plannedEnd, deltaDays);
-      currentEnd = parseDate(formatDate(tentative)) < parseDate(task.plannedStart) ? parseDate(task.plannedStart) : tentative;
-      currentStart = parseDate(task.plannedStart);
-    }
+    const draft = resolveDragDates(task, deltaDays, dragMode);
+    currentStart = parseDate(draft.start);
+    currentEnd = parseDate(draft.end);
     applyDraftPosition();
   };
 
@@ -985,6 +1003,7 @@ if (typeof module !== 'undefined') {
     shiftTaskDates,
     resizeTaskStart,
     resizeTaskEnd,
+    resolveDragDates,
   };
 }
 
