@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ガントチャート進捗管理</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-left">
+      <select id="projectSelect"></select>
+      <button id="addProjectBtn">＋プロジェクト</button>
+      <button id="editProjectBtn">名称変更</button>
+      <button id="deleteProjectBtn">削除</button>
+      <div class="view-switch">
+        <button data-range="today">今日</button>
+        <button data-range="week" class="active">今週</button>
+        <button data-range="month">今月</button>
+      </div>
+      <div class="search-area">
+        <input id="taskSearch" type="search" placeholder="タスク検索 (Ctrl+F)" />
+      </div>
+      <div class="summary" id="todaySummary"></div>
+    </div>
+    <div class="header-right">
+      <div id="autosaveStatus">保存待ち</div>
+      <button id="reportBtn">進捗報告文生成</button>
+      <button id="saveBtn" title="Ctrl+S">保存</button>
+    </div>
+  </header>
+
+  <main class="main-layout">
+    <section class="task-pane">
+      <div class="table-actions">
+        <button id="addTaskBtn">＋タスク</button>
+        <label class="filter">
+          <span>ステータス</span>
+          <select id="statusFilter">
+            <option value="">すべて</option>
+            <option value="not_started">未着手</option>
+            <option value="in_progress">進行中</option>
+            <option value="completed">完了</option>
+            <option value="on_hold">保留</option>
+          </select>
+        </label>
+      </div>
+      <div class="task-table-wrapper">
+        <table id="taskTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="gantt-pane">
+      <div class="gantt-header">
+        <h2>ガントチャート</h2>
+        <div class="legend">
+          <span class="legend-item legend-progress">進行中</span>
+          <span class="legend-item legend-delay">遅延</span>
+          <span class="legend-item legend-done">完了</span>
+        </div>
+      </div>
+      <div class="gantt-area" id="ganttArea"></div>
+    </section>
+
+    <aside class="side-panel" id="sidePanel">
+      <h3>進捗更新</h3>
+      <div id="sidePanelContent">タスクを選択してください。</div>
+    </aside>
+  </main>
+
+  <section class="bottom-tabs">
+    <div class="tab-buttons">
+      <button data-tab="logs" class="active">作業ログ</button>
+      <button data-tab="adhoc">一時タスク</button>
+    </div>
+    <div class="tab-content" id="logsTab"></div>
+    <div class="tab-content hidden" id="adhocTab"></div>
+  </section>
+
+  <button class="floating-btn" id="addAdhocBtn">＋一時タスク</button>
+
+  <div class="modal hidden" id="reportModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>進捗報告文生成</h3>
+        <button class="close-modal" data-close>×</button>
+      </div>
+      <div class="modal-body">
+        <label>期間
+          <input type="date" id="reportStart"> 〜 <input type="date" id="reportEnd">
+        </label>
+        <label>プロジェクト
+          <select id="reportProject"></select>
+        </label>
+        <label><input type="checkbox" id="includeAdhoc" checked> 一時タスクも含める</label>
+        <textarea id="reportText" rows="10" readonly></textarea>
+        <div class="report-actions">
+          <button id="selectReport">全選択</button>
+          <button id="copyReport">コピー</button>
+          <button id="generateReport" class="primary">Ctrl+Enter で生成</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="main.js"></script>
+</body>
+</html>
