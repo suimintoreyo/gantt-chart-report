@@ -186,6 +186,41 @@ function dateDiff(start, end) {
 }
 function clamp(num, min, max) { return Math.min(Math.max(num, min), max); }
 
+/**
+ * タスクの開始・終了をまとめて日数シフトする
+ * @param {Task} task
+ * @param {number} deltaDays
+ */
+function shiftTaskDates(task, deltaDays) {
+  return {
+    ...task,
+    plannedStart: formatDate(addDays(task.plannedStart, deltaDays)),
+    plannedEnd: formatDate(addDays(task.plannedEnd, deltaDays)),
+  };
+}
+
+/**
+ * タスクの開始日のみをリサイズする（終了日を超えないようにする）
+ * @param {Task} task
+ * @param {number} deltaDays
+ */
+function resizeTaskStart(task, deltaDays) {
+  const candidate = formatDate(addDays(task.plannedStart, deltaDays));
+  const safeStart = parseDate(candidate) > parseDate(task.plannedEnd) ? task.plannedEnd : candidate;
+  return { ...task, plannedStart: safeStart };
+}
+
+/**
+ * タスクの終了日のみをリサイズする（開始日を下回らないようにする）
+ * @param {Task} task
+ * @param {number} deltaDays
+ */
+function resizeTaskEnd(task, deltaDays) {
+  const candidate = formatDate(addDays(task.plannedEnd, deltaDays));
+  const safeEnd = parseDate(candidate) < parseDate(task.plannedStart) ? task.plannedStart : candidate;
+  return { ...task, plannedEnd: safeEnd };
+}
+
 function updateSaveStatus(text) {
   const el = document.getElementById('saveStatus');
   if (el) el.textContent = text;
@@ -444,25 +479,38 @@ function renderGantt() {
     header.appendChild(cell);
   }
 
+  const dayWidth = (header.getBoundingClientRect().width || header.clientWidth || 1) / days || 1;
   const tasks = appState.tasks.filter((t) => t.projectId === activeProjectId);
   tasks.forEach((task) => {
     const row = document.createElement('div');
     row.className = 'gantt-row';
     const bar = document.createElement('div');
     bar.className = 'gantt-bar';
-    bar.textContent = task.name;
-    const startIdx = Math.max(0, dateDiff(startDate, task.plannedStart));
-    const endIdx = Math.min(days, dateDiff(startDate, task.plannedEnd) + 1);
-    const left = (startIdx / days) * 100;
-    const width = ((endIdx - startIdx) / days) * 100;
-    bar.style.left = `${left}%`;
-    bar.style.width = `${width}%`;
+    bar.dataset.taskId = task.id;
+
+    const leftHandle = document.createElement('div');
+    leftHandle.className = 'gantt-handle left';
+    leftHandle.dataset.side = 'start';
+    const rightHandle = document.createElement('div');
+    rightHandle.className = 'gantt-handle right';
+    rightHandle.dataset.side = 'end';
+    const label = document.createElement('span');
+    label.className = 'gantt-bar-label';
+    label.textContent = task.name;
+
+    bar.appendChild(leftHandle);
+    bar.appendChild(label);
+    bar.appendChild(rightHandle);
+
+    updateBarPosition(bar, startDate, days, task.plannedStart, task.plannedEnd);
     bar.style.opacity = task.status === 'completed' ? 0.6 : 1;
     bar.addEventListener('click', () => {
       selectedTaskId = task.id;
       renderSidePanel();
       highlightSelection(task.id);
     });
+
+    attachBarDrag(bar, task, { startDate, totalDays: days, dayWidth });
     row.appendChild(bar);
     body.appendChild(row);
   });
@@ -476,6 +524,91 @@ function renderGantt() {
   } else {
     todayLine.style.display = 'none';
   }
+}
+
+function calculateBarPlacement(rangeStart, totalDays, taskStart, taskEnd) {
+  const startIdx = dateDiff(rangeStart, taskStart);
+  const endIdx = dateDiff(rangeStart, taskEnd) + 1;
+  const clampedStart = clamp(startIdx, 0, totalDays);
+  const clampedEnd = clamp(endIdx, 0, totalDays);
+  const widthDays = Math.max(clampedEnd - clampedStart, 0);
+  return {
+    left: (clampedStart / totalDays) * 100,
+    width: (widthDays / totalDays) * 100,
+  };
+}
+
+function updateBarPosition(bar, rangeStart, totalDays, taskStart, taskEnd) {
+  const placement = calculateBarPlacement(rangeStart, totalDays, taskStart, taskEnd);
+  bar.style.left = `${placement.left}%`;
+  bar.style.width = `${placement.width}%`;
+}
+
+/**
+ * ガントバーのドラッグ＆リサイズを司るイベントバインド
+ */
+function attachBarDrag(bar, task, timeline) {
+  let startX = 0;
+  let dragMode = 'move';
+  let pointerId;
+  let currentStart = parseDate(task.plannedStart);
+  let currentEnd = parseDate(task.plannedEnd);
+  let hasMoved = false;
+
+  const applyDraftPosition = () => {
+    updateBarPosition(bar, timeline.startDate, timeline.totalDays, formatDate(currentStart), formatDate(currentEnd));
+  };
+
+  const onPointerMove = (e) => {
+    if (pointerId !== e.pointerId) return;
+    const deltaDays = Math.round((e.clientX - startX) / (timeline.dayWidth || 1));
+    if (deltaDays === 0 && !hasMoved) return;
+    hasMoved = hasMoved || deltaDays !== 0;
+
+    if (dragMode === 'move') {
+      currentStart = addDays(task.plannedStart, deltaDays);
+      currentEnd = addDays(task.plannedEnd, deltaDays);
+    } else if (dragMode === 'start') {
+      const tentative = addDays(task.plannedStart, deltaDays);
+      currentStart = parseDate(formatDate(tentative)) > parseDate(task.plannedEnd) ? parseDate(task.plannedEnd) : tentative;
+      currentEnd = parseDate(task.plannedEnd);
+    } else if (dragMode === 'end') {
+      const tentative = addDays(task.plannedEnd, deltaDays);
+      currentEnd = parseDate(formatDate(tentative)) < parseDate(task.plannedStart) ? parseDate(task.plannedStart) : tentative;
+      currentStart = parseDate(task.plannedStart);
+    }
+    applyDraftPosition();
+  };
+
+  const onPointerUp = (e) => {
+    if (pointerId !== e.pointerId) return;
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
+    if (bar.hasPointerCapture(pointerId)) bar.releasePointerCapture(pointerId);
+    bar.classList.remove('dragging');
+    if (!hasMoved) {
+      highlightSelection(task.id);
+      return;
+    }
+    commitTaskDateChange(task.id, formatDate(currentStart), formatDate(currentEnd));
+  };
+
+  bar.addEventListener('pointerdown', (e) => {
+    const handle = e.target.closest('.gantt-handle');
+    dragMode = handle ? (handle.dataset.side === 'start' ? 'start' : 'end') : 'move';
+    startX = e.clientX;
+    pointerId = e.pointerId;
+    currentStart = parseDate(task.plannedStart);
+    currentEnd = parseDate(task.plannedEnd);
+    hasMoved = false;
+    bar.setPointerCapture(pointerId);
+    bar.classList.add('dragging');
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    selectedTaskId = task.id;
+    renderSidePanel();
+    e.preventDefault();
+  });
 }
 
 function getRange() {
@@ -498,6 +631,18 @@ function highlightSelection(taskId) {
   selectedTaskId = taskId;
   renderTaskTable();
   renderGantt();
+}
+
+function commitTaskDateChange(taskId, startDate, endDate) {
+  const task = appState.tasks.find((t) => t.id === taskId);
+  if (!task) return;
+  if (task.plannedStart === startDate && task.plannedEnd === endDate) return;
+  pushUndo();
+  task.plannedStart = startDate;
+  task.plannedEnd = endDate;
+  selectedTaskId = taskId;
+  renderAll();
+  scheduleSave();
 }
 
 function renderSidePanel() {
@@ -837,6 +982,9 @@ if (typeof module !== 'undefined') {
     getDelayedTasks,
     getTasksInPeriod,
     generateReport,
+    shiftTaskDates,
+    resizeTaskStart,
+    resizeTaskEnd,
   };
 }
 
