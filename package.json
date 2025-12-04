@@ -1,0 +1,13 @@
+{
+  "name": "gantt-chart-report",
+  "version": "1.0.0",
+  "description": "ガントチャート進捗管理アプリ",
+  "main": "main.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
