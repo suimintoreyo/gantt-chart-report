@@ -1,315 +1,79 @@
-# ガントチャート進捗管理アプリ 要件書（Codex向け）
+# Gantt Chart Progress & Report App – Requirements (for Codex)
 
-## 0. Codex への依頼内容
+This document defines the requirements for implementing and extending a Gantt chart–based progress management & reporting app. The implementation will be driven by Codex based on this specification.
 
-あなた（Codex）には、以下の要件にもとづき、
+The work has **two main scopes**:
 
-* ブラウザ上で動作する **シングルページの進捗管理アプリ** を
-* **Vanilla JavaScript + HTML + CSS**（フレームワークなし）で
-* GUI操作の快適性を重視して
+1. Implement / refine a browser-based Gantt progress-report app (Vanilla JS, HTML, CSS) with a strong focus on GUI usability and local persistence.
+2. For the existing repository
+   `https://github.com/suimintoreyo/gantt-chart-report.git`
+   add **direct mouse-based editing** of each Gantt task bar (drag to move/resize) and ensure that underlying dates and durations are updated correctly.
 
-実装してもらいたい。
-
-最初のアウトプットは、以下3ファイル構成を想定する：
-
-* `index.html`
-* `style.css`
-* `main.js`
-
-※ ビルドツール不要。`index.html` をブラウザで開けば動く構成にすること。
+Additionally, unit tests should be added for key logic using Jest.
 
 ---
 
-## 1. アプリ概要
+## 0. Tech Stack & Project Structure
 
-### 1.1 目的
+* **Frontend only**; runs in a modern desktop browser (latest Chrome/Edge).
+* **No frontend frameworks**: use **Vanilla JavaScript**, **HTML**, and **CSS** only.
+* The app should run by just opening `index.html` (or the repo's existing entry HTML) in a browser.
+* Use **localStorage** for data persistence.
+* For testable logic, set up a **Node + Jest** environment.
 
-* プロジェクト／タスクのスケジュールを **ガントチャート** で可視化する
-* 進捗率・作業ログ・一時タスクから、**進捗報告用の文章を自動生成** する
-* 突発的な雑務や一時タスクも別枠で記録し、報告文に反映できるようにする
-* 何よりも **GUI操作が快適** であること（クリック・ドラッグ・ショートカットなど）
+### Expected Files (new or updated)
 
-### 1.2 想定環境
+* Main app (if not already present):
 
-* PCブラウザ（最新の Chrome / Edge を想定）
-* ローカルファイルとして直接 `index.html` を開いても動作すること
-* サーバサイドは使用しない。データはブラウザの **localStorage** に保存
+  * `index.html` (or existing entry HTML in the repo)
+  * `style.css`
+  * `main.js` and/or additional JS modules (e.g., `state.js`, `gantt.js`, `report.js`).
+* Tests & tooling:
 
----
+  * `package.json`
+  * Jest config file if needed (e.g., `jest.config.mjs` or `jest.config.js`).
+  * `__tests__/` directory with test files.
 
-## 2. 技術要件
-
-1. **フレームワーク不使用**
-
-   * React / Vue 等は使わず、プレーンな JavaScript, HTML, CSS で実装する
-2. **SPA的挙動**
-
-   * 画面全体のリロードなしで、DOM操作により画面を更新する
-3. **データ永続化**
-
-   * localStorage を使用して、プロジェクト・タスク・作業ログ・一時タスクを保存／復元する
-4. **モジュール構成**
-
-   * `main.js` 内で、役割ごとに関数・オブジェクトを分けて構成する（例：`ProjectStore`, `GanttView`, `TaskTableView` 等）
-   * クラスでも関数ベースでもよいが、読みやすさと保守性を重視
-5. **コメント**
-
-   * 関数・主要処理には、簡潔なコメント（日本語で可）を付けること
-6. **スタイル**
-
-   * `style.css` にスタイルをまとめる
-   * ダーク寄りのテーマ（背景は濃いグレー系、文字は白〜淡色）を想定
+For the existing repo `gantt-chart-report`, adapt the above structure to what is already in place; do not break existing build/launch flow.
 
 ---
 
-## 3. 画面構成・UI
+## 1. High-Level App Overview
 
-### 3.1 全体レイアウト
+### 1.1 Purpose
 
-1画面完結構成とし、基本レイアウトは以下：
+The app is a **Gantt chart–based progress management tool** that supports:
 
-* **上部ヘッダ**
+* Visual schedule management of projects and tasks via a Gantt chart.
+* Comfortable GUI operations:
 
-  * プロジェクト選択ドロップダウン
-  * 表示期間（今日／今週／今月）切替
-  * 「今日のサマリー」（重要なポイントを簡易表示：今日やるタスク数、遅延タスク数 など）
-  * 右上付近に「進捗報告文生成」ボタン
+  * Direct manipulation with mouse (drag & drop, resize).
+  * Quick keyboard operations for power users.
+* Tracking of:
 
-* **中央：左右2ペイン**
+  * Regular project tasks.
+  * Ad-hoc / one-off tasks ("一時タスク").
+* **Automatic progress report generation** in text form, based on:
 
-  * 左ペイン：タスク一覧テーブル
-  * 右ペイン：ガントチャート
+  * Tasks and their progress.
+  * Work logs (作業ログ).
+  * Ad-hoc tasks.
 
-* **下部：タブ領域**
+### 1.2 Execution Environment
 
-  * タブ切替：`作業ログ` | `一時タスク`
-  * 選択中タブの内容をテーブル形式で表示
-
-また、画面右側（もしくは右下）に以下を表示する：
-
-* **進捗更新用サイドパネル**
-
-  * タスク選択時、タスクの詳細・進捗スライダー・作業ログ追加フォームを表示
-
-* **右下フローティングボタン**
-
-  * 「＋一時タスク」ボタン
-  * クリックで一時タスクの簡易入力モーダル（もしくはサイドパネル）を開く
+* Desktop browser, no server required.
+* Works offline: all data stored in **localStorage**.
+* The existing repo (`gantt-chart-report`) is the baseline. Extend/improve it rather than rewriting from scratch.
 
 ---
 
-## 4. GUI 操作性 要件
+## 2. Data Model
 
-### 4.1 共通操作
-
-* **自動保存**
-
-  * データ変更後、数秒以内に localStorage へ自動保存
-  * 画面のどこか（右上など）に「自動保存済み」等の小さなステータス表示
-
-* **ショートカットキー**
-
-  * `Ctrl + S` : 明示的な保存（localStorage へ保存し、「保存しました」トーストを表示）
-  * `N` : 新規タスク行にフォーカス
-  * `Ctrl + F` : タスク名検索の入力欄にフォーカス
-  * `Ctrl + Z / Ctrl + Y` : 直前の操作の Undo / Redo（最低 10〜20 ステップ分）
-  * `Ctrl + Enter` : 進捗報告文生成モーダル内で「生成」
-
-* **IME配慮**
-
-  * 日本語入力中の `Enter` でショートカット動作（モーダル閉じる等）が発火しないようにする
-
-### 4.2 タスク一覧テーブル（左ペイン）
-
-**表示**
-
-* 列：
-
-  * チェックボックス（選択用）
-  * タスク名
-  * 担当者
-  * 進捗％
-  * 開始日
-  * 終了日
-  * ステータス（未着手／進行中／完了／保留）
-  * 重要度（高／中／低）
-
-* 列ヘッダクリックでソート（昇順／降順トグル）
-
-**操作**
-
-* 行末に常に `+ 新規タスク` 行を表示
-
-  * ここに入力すると新規タスクが作成される
-* セル **ダブルクリック** でインライン編集
-
-  * テキスト入力可能なセル（タスク名・担当者・進捗％・日付など）は、セル内で編集
-* `Tab` / `Shift + Tab` でセル間移動
-* 行選択時、そのタスクをガント上でハイライトし、サイドパネルに詳細表示
-* `Delete` キー or 行メニューからタスク削除
-
-**フィルタ**
-
-* 列ヘッダ部に簡易フィルタ（担当者・ステータスなど）
-
-### 4.3 ガントチャート（右ペイン）
-
-**基本表示**
-
-* 縦軸：タスク（タスク一覧と対応）
-* 横軸：時間（日単位表示を基本とし、ズームで週／月相当の粗さも切替可能）
-* 各タスクはバーとして表示
-
-  * 計画期間：バー全体
-  * 進捗率：バー内部の塗りつぶし長さで表現
-  * 遅延タスク：バーの色や枠線を変えて視覚的に分かるようにする
-* 「今日」を示す縦ラインを表示
-
-**操作**
-
-* **バーのドラッグ移動**
-
-  * 左右ドラッグ：開始日・終了日をそのまま前後にシフト
-* **バー端のドラッグ**
-
-  * 両端に小さなハンドルを用意し、ドラッグで開始日／終了日を個別に変更
-* **背景ドラッグ**
-
-  * 空白部分ドラッグでガント領域を左右スクロール（パン）
-* **ホイール＋Ctrl**
-
-  * 時間軸のズームイン／アウト（簡易でよい。日単位と週単位の2段階でも可）
-
-**新規タスク作成**
-
-* 空白エリアをドラッグで区間を選択 → マウスアップ時に「この範囲で新規タスクを作成」ポップアップ
-
-  * タスク名を入力 → 作成 → タスク一覧にも反映
-
-**コンテキストメニュー**
-
-* タスクバー右クリックでメニュー表示：
-
-  * 「タスク編集」（サイドパネルを開く）
-  * 「タスクを複製」
-  * 「タスク削除」
-
-### 4.4 サイドパネル（タスク詳細＋進捗更新）
-
-**表示項目**
-
-* タスク名
-* 所属プロジェクト
-* 担当者
-* 計画開始日・終了日
-* ステータス
-* 進捗スライダー（0〜100%）
-* 進捗％直接入力欄
-* メモ（任意）
-* 「今日の作業ログに追加」用フォーム
-
-  * 作業内容テキスト
-  * 所要時間（h）
-
-**操作**
-
-* タスク選択時に右側にスライドイン表示（モバイル対策は不要）
-* スライダーで大まかに％を変え、数値入力で微調整
-* 「作業ログ追加」ボタンで、現在の日付で WorkLog を追加
-
-### 4.5 下部タブ：作業ログ
-
-**表示**
-
-* 日付
-* タスク名
-* 作業内容
-* 所要時間
-* 進捗％（ログ登録時点）
-
-**操作**
-
-* 期間フィルタ：今日／今週／任意期間
-* ログ行の編集・削除
-
-### 4.6 下部タブ：一時タスク
-
-**表示**
-
-* 日付
-* タイトル
-* 詳細メモ
-* 所要時間
-* 関連プロジェクト（任意）
-
-**操作**
-
-* タブ内で `+` ボタンから追加
-* 行のインライン編集
-* 削除
-
-**フローティングボタン**
-
-* どの画面からでも右下の「＋一時タスク」ボタンで簡易入力モーダルを開く
-
-  * 日付（デフォルト：今日）
-  * タイトル
-  * 所要時間
-  * メモ
-  * 「保存」で一覧に反映
-
-### 4.7 進捗報告文自動生成モーダル
-
-**起動**
-
-* 画面右上の「進捗報告文生成」ボタンでモーダル表示
-
-**モーダル項目**
-
-1. 対象期間
-
-   * ラジオボタン：
-
-     * 「今日」
-     * 「今週」
-     * 「期間指定」（開始日・終了日入力）
-2. 対象プロジェクト
-
-   * プロジェクトのチェックボックスリスト（複数選択可）
-3. オプション
-
-   * 「一時タスクも含める」チェックボックス
-
-**生成結果**
-
-* モーダル内の下部にテキストエリアで表示
-* 構造（例）：
-
-  * 概要
-  * 完了タスク
-  * 進行中タスク
-  * 遅延タスク（計画との差分から判定）
-  * 一時タスク／その他
-  * 次回までの予定（簡易でよい：進行中タスク名＋目標）
-
-**操作性**
-
-* 生成後、以下の挙動を実装：
-
-  * テキストエリア内の全選択ボタン
-  * 「クリップボードにコピー」ボタン
-  * 可能であれば生成直後に自動コピーし、トーストで通知
-
----
-
-## 5. データモデル仕様
-
-TypeScript 風の型定義で記載する。実装はプレーン JS でよい。
+Use the following conceptual data structures. Implementation can be plain JS objects; TypeScript types are provided just as documentation.
 
 ```ts
 type ProjectStatus = 'planned' | 'active' | 'completed' | 'on_hold';
-
-interface Project {
+\ ninterface Project {
   id: string;
   name: string;
   owner?: string;
@@ -325,14 +89,14 @@ interface Task {
   id: string;
   projectId: string;
   name: string;
-  category?: string;      // フェーズ・カテゴリ
+  category?: string;      // phase/category
   assignee?: string;
   plannedStart: string;   // YYYY-MM-DD
   plannedEnd: string;     // YYYY-MM-DD
   progress: number;       // 0-100
   status: TaskStatus;
   priority?: TaskPriority;
-  dependsOn?: string[];   // 依存タスクID
+  dependsOn?: string[];   // task IDs
   notes?: string;
 }
 
@@ -341,8 +105,8 @@ interface WorkLog {
   taskId: string;
   date: string;           // YYYY-MM-DD
   workNote: string;
-  hours?: number;         // 作業時間（h）
-  progressAfter?: number; // ログ登録後の進捗％
+  hours?: number;         // hours worked
+  progressAfter?: number; // progress % after work
 }
 
 interface AdhocTask {
@@ -354,61 +118,529 @@ interface AdhocTask {
   relatedProjectId?: string;
 }
 
+interface UiPreferences {
+  taskTableColumnWidths?: { [columnKey: string]: number };
+  ganttZoomLevel?: number; // integer zoom level
+  theme?: 'dark' | 'light';
+}
+
 interface AppState {
   projects: Project[];
   tasks: Task[];
   workLogs: WorkLog[];
   adhocTasks: AdhocTask[];
-  uiPreferences: {
-    taskTableColumnWidths?: { [columnKey: string]: number };
-    ganttZoomLevel?: number; // 任意の整数
-    theme?: 'dark' | 'light';
-  };
+  uiPreferences: UiPreferences;
 }
 ```
 
-`AppState` 全体を JSON で localStorage に保存／復元する実装とすること。
+`AppState` as a whole is stored in localStorage.
 
 ---
 
-## 6. 機能要件一覧（MVPとして必須）
+## 3. Persistence (localStorage)
 
-1. プロジェクトの追加／編集／削除
-2. タスクの追加／編集／削除
-3. タスク一覧テーブルでのインライン編集・ソート・フィルタ
-4. ガントチャート表示
+### 3.1 Requirements
 
-   * バー表示
-   * バーのドラッグ移動
-   * バー端ドラッグで期間変更
-   * Today ライン表示
-5. サイドパネルでの進捗更新＆作業ログ登録
-6. 一時タスクの管理（追加／編集／削除）
-7. 作業ログ一覧表示（下部タブ）
-8. 進捗報告文の自動生成モーダル
+* Use `localStorage` for persisting the entire `AppState`.
+* Use a single, stable key, e.g., `ganttProgressAppState`.
+* Provide robust load/save functions with error handling and simple migration hooks.
 
-   * 期間指定
-   * プロジェクト指定
-   * 一時タスクの取り込み
-   * テキスト生成＆コピー
-9. localStorage への自動保存・明示保存
-10. Undo / Redo（最低限：タスク編集・作成・削除に対応）
+### 3.2 API (pure functions)
+
+Implement these utility functions (either in `state.js` or equivalent):
+
+```js
+const STORAGE_KEY = 'ganttProgressAppState';
+
+/**
+ * Load AppState from localStorage.
+ * If not present or parse fails, return a valid initial state.
+ */
+export function loadState() {
+  try {
+    const json = localStorage.getItem(STORAGE_KEY);
+    if (!json) return getInitialState();
+    const state = JSON.parse(json);
+    return migrateStateIfNeeded(state);
+  } catch (e) {
+    console.error('Failed to load state', e);
+    return getInitialState();
+  }
+}
+
+/**
+ * Save AppState to localStorage (stringified JSON).
+ */
+export function saveState(state) {
+  try {
+    const json = JSON.stringify(state);
+    localStorage.setItem(STORAGE_KEY, json);
+    // Optionally show some UI indicator like "auto saved".
+  } catch (e) {
+    console.error('Failed to save state', e);
+  }
+}
+```
+
+Additionally implement:
+
+* `getInitialState()` – returns an empty but valid `AppState`.
+* `migrateStateIfNeeded(state)` – if necessary, upgrade older state versions (can initially be a pass-through).
+
+### 3.3 Auto-Save & Manual Save
+
+* **Auto-save:** On relevant state changes (task edited, dates moved, etc.), save after a short debounce (e.g. 500–2000 ms).
+* **Manual save:** `Ctrl+S` triggers an explicit `saveState(currentState)` and shows a small toast “保存しました” or similar.
 
 ---
 
-## 7. 実装アウトプットに関する補足
+## 4. GUI / UX Requirements
 
-* レイアウトはレスポンシブでなくてもよい（PC想定）
-* CSS はシンプルでよいが、
+### 4.1 Overall Layout (Desktop)
 
-  * ホバー時のハイライト
-  * 選択行／選択タスクの強調
-  * エラー時（入力値不正等）の簡易表示
-    など、操作時の視覚フィードバックを必ず実装すること。
-* ガント描画は、HTML要素（div）＋CSS でも SVG でもよい。
-  実装しやすい方を選んでよい。
+Single-page layout:
+
+* **Top header**
+
+  * Project selection dropdown.
+  * Date range selector (e.g., today / this week / this month).
+  * A small “Today’s summary” area (number of tasks due today, delayed tasks, etc. – can be simple).
+  * Button: **"進捗報告文生成"** (opens report modal).
+
+* **Center: Two main panes (left & right)**
+
+  * **Left:** Task list table.
+  * **Right:** Gantt chart.
+
+* **Bottom area:** Tabbed view
+
+  * Tabs: `作業ログ` | `一時タスク`.
+  * Each tab shows a table list for that category.
+
+* **Right side (or similar):**
+
+  * **Side panel** for selected task: details and progress update controls.
+
+* **Floating button (bottom-right):**
+
+  * `＋一時タスク` – quick entry for ad-hoc tasks from any view.
+
+### 4.2 Common UX Rules
+
+* Prioritize **low click count**:
+
+  * Most edits should be reachable by double-click or single click + side panel.
+
+* **Keyboard support**:
+
+  * `Ctrl+S` – manual save.
+  * `N` – focus new task row.
+  * `Ctrl+F` – focus search/filter input.
+  * `Ctrl+Enter` – confirm in report modal.
+  * `Ctrl+Z / Ctrl+Y` – Undo / Redo for recent edits (at least 10–20 steps covering task creation, deletion, and date changes).
+
+* **IME Safety**:
+
+  * When IME composition is active (Japanese input), `Enter` must not trigger global shortcuts (closing modals, etc.).
+
+* Provide **visual feedback**:
+
+  * Hover states on buttons and rows.
+  * Selection highlight (clicked task row and its Gantt bar).
+  * Small auto-save indicator (e.g., text in the corner: “自動保存済み”).
 
 ---
 
-以上を満たす形で、`index.html` / `style.css` / `main.js` を出力してほしい。
-必要であれば、最初に **最小機能版（MVP）** を実装し、その後に機能を段階的に追加する形でもよい。
+## 5. Task List Table (Left Pane)
+
+### 5.1 Columns
+
+At minimum:
+
+* Checkbox (row selection)
+* Task name
+* Assignee
+* Progress %
+* Start date
+* End date
+* Status (未着手 / 進行中 / 完了 / 保留)
+* Priority (高 / 中 / 低)
+
+### 5.2 Behavior
+
+* **Inline editing**:
+
+  * Double-clicking a cell enters edit mode.
+  * Tab / Shift+Tab moves between editable cells.
+* **New task row**:
+
+  * Keep a special bottom row like `+ 新規タスク`.
+  * Typing into it should create a new task.
+* **Sorting & filtering**:
+
+  * Clicking column headers toggles sorting.
+  * Simple header filters for Assignee and Status (e.g., small dropdowns).
+* **Row selection**:
+
+  * Selecting a row highlights the corresponding bar in the Gantt chart.
+  * The selected task’s details are shown in the side panel.
+* **Deletion**:
+
+  * `Delete` key or a row menu can delete the task.
+
+---
+
+## 6. Gantt Chart (Right Pane)
+
+The Gantt chart is central and must support **direct mouse manipulation** of task bars.
+
+### 6.1 Basic Display
+
+* Vertical axis: tasks (aligned with the task table).
+* Horizontal axis: time in days.
+* Each task is drawn as a bar:
+
+  * Entire bar = planned duration (from `plannedStart` to `plannedEnd`).
+  * Internal fill = progress % (left-to-right fill proportion).
+* A vertical line indicates **today**.
+* Delayed tasks are visually distinctive (e.g., different color/border). A task is “delayed” when `plannedEnd < today` and `progress < 100`.
+
+### 6.2 Mouse-Based Editing (Core Requirement)
+
+For each bar representing a task, implement **three kinds of mouse interactions**:
+
+1. **Drag the entire bar horizontally** – shift start & end dates together.
+2. **Drag the left edge** – adjust only the start date.
+3. **Drag the right edge** – adjust only the end date.
+
+Use a day-based snapping system based on pixel movements.
+
+#### Shared rules
+
+* Horizontal movement translates into integer day offsets:
+
+  ```js
+  const deltaX = currentMouseX - dragStartMouseX;
+  const deltaDays = Math.round(deltaX / dayWidth); // dayWidth: pixels per day
+  ```
+
+* While dragging, update the bar’s position/width visually in real time.
+
+* On drag end (`mouseup` / `pointerup`):
+
+  * Convert final `deltaDays` to new `plannedStart` / `plannedEnd`.
+  * Update the corresponding `Task` object in state.
+  * Persist via `saveState` (with debounce).
+  * Refresh any related UI (table, side panel dates, etc.).
+
+#### 6.2.1 Entire Bar Drag (Shift Start & End)
+
+* Active when clicking and dragging **the middle area** of the bar (not the edges).
+* Behavior:
+
+  * Drag right: both `plannedStart` and `plannedEnd` move later by `deltaDays`.
+  * Drag left: both move earlier.
+
+Pseudo logic:
+
+```js
+// On drag end
+const newStart = addDays(task.plannedStart, deltaDays);
+const newEnd   = addDays(task.plannedEnd, deltaDays);
+
+updateTaskDates(task.id, newStart, newEnd);
+```
+
+* Optional constraints:
+
+  * Clamp so dates do not exceed global min/max timeline (if any).
+  * If dependency logic exists, ensure not to violate basic constraints, or at least document behavior.
+
+#### 6.2.2 Left Edge Drag (Change Start Only)
+
+* A resize handle on the **left edge** (can be a separate DOM element or region) starts a “resize-left” drag.
+* Behavior:
+
+  * Drag left: `plannedStart` moves earlier (duration increases).
+  * Drag right: `plannedStart` moves later (duration decreases).
+
+On drag end:
+
+```js
+const newStart = addDays(task.plannedStart, deltaDays);
+// Ensure newStart <= plannedEnd
+if (new Date(newStart) > new Date(task.plannedEnd)) {
+  // clamp to maintain at least 1 day duration, for example
+  // or just set newStart = plannedEnd
+}
+updateTaskDates(task.id, newStart, task.plannedEnd);
+```
+
+#### 6.2.3 Right Edge Drag (Change End Only)
+
+* A resize handle on the **right edge** starts a “resize-right” drag.
+* Behavior:
+
+  * Drag right: `plannedEnd` moves later (duration increases).
+  * Drag left: `plannedEnd` moves earlier (duration decreases).
+
+On drag end:
+
+```js
+const newEnd = addDays(task.plannedEnd, deltaDays);
+// Ensure newEnd >= plannedStart
+if (new Date(newEnd) < new Date(task.plannedStart)) {
+  // clamp to at least same as start, or 1 day duration
+}
+updateTaskDates(task.id, task.plannedStart, newEnd);
+```
+
+### 6.3 Implementation Details
+
+* It is acceptable to implement the Gantt chart with:
+
+  * HTML elements (divs) + absolute positioning, or
+  * SVG.
+* Each bar must be associated with the task ID (e.g., `data-task-id`).
+* Use `pointerdown` / `pointermove` / `pointerup` or traditional mouse events (`mousedown` / `mousemove` / `mouseup`).
+* While IME is active for text fields, do not accidentally trigger drag logic.
+
+---
+
+## 7. Side Panel – Task Detail & Progress Update
+
+When a task is selected (from table or Gantt bar), display a side panel with:
+
+* Task name (editable).
+* Project, assignee.
+* Planned start & end dates (editable; must stay in sync with Gantt changes).
+* Status.
+* Progress controls:
+
+  * Slider from 0–100.
+  * Numeric input for exact %.
+* Notes field.
+* Work log entry:
+
+  * Today’s date (default).
+  * Work description.
+  * Hours.
+  * Button: “今日の作業ログに追加” – creates a `WorkLog` entry.
+
+All changes must update `AppState` and then `saveState`.
+
+---
+
+## 8. Bottom Tabs – Logs & Ad-hoc Tasks
+
+### 8.1 作業ログ (Work Logs)
+
+* Table columns:
+
+  * Date
+  * Task name
+  * Work note
+  * Hours
+  * Progress % after the work
+* Features:
+
+  * Period filter: today / this week / custom date range.
+  * Edit / delete existing logs.
+
+### 8.2 一時タスク (Ad-hoc Tasks)
+
+* Table columns:
+
+  * Date
+  * Title
+  * Detail note
+  * Hours
+  * Related project (optional).
+* Features:
+
+  * Add/edit/delete.
+  * Quick-add via the floating `＋一時タスク` button (opens a small modal or side panel):
+
+    * Date (default to today).
+    * Title.
+    * Hours.
+    * Detail.
+    * Save.
+
+---
+
+## 9. Progress Report Generation
+
+Provide a **modal** dialog invoked from the main header button "進捗報告文生成".
+
+### 9.1 Modal Options
+
+* Period selection:
+
+  * Today.
+  * This week.
+  * Custom date range (from/to).
+* Target projects:
+
+  * Multi-select list of projects.
+* Option:
+
+  * Include ad-hoc tasks? (checkbox).
+
+### 9.2 Report Content Structure
+
+Implement a pure function to generate the report text:
+
+```js
+export function generateReport(appState, options) {
+  // options: { from: string, to: string, projectIds?: string[], includeAdhoc?: boolean }
+  // returns string
+}
+```
+
+The resulting text should follow a structure like:
+
+1. **Overview**
+
+   * e.g. "○月○日（〜○月○日）の進捗報告です。"
+2. **Completed tasks**
+
+   * List of tasks with `status === 'completed'` and completed within the period.
+3. **In-progress tasks**
+
+   * Tasks with `status === 'in_progress'`, including progress % and short description (from recent logs if available).
+4. **Delayed / at-risk tasks**
+
+   * Tasks for which `plannedEnd < to` and `progress < 100`. Show reason/notes if available.
+5. **Ad-hoc / other tasks** (if `includeAdhoc` is true)
+
+   * Summaries of ad-hoc tasks and their hours.
+6. **Plans until next report**
+
+   * Simple forecast based on in-progress tasks (e.g., "タスクXの実装完了〜単体テスト着手") – this can be heuristic/simple.
+
+### 9.3 Modal UI
+
+* Show a large textarea containing the generated report.
+* Buttons:
+
+  * Generate / Regenerate.
+  * Copy to clipboard.
+  * Close.
+* Optional: auto-select and auto-copy after generation, with a small toast notification.
+
+---
+
+## 10. Testing Requirements (Jest)
+
+Set up **Jest** for unit testing of the non-DOM logic.
+
+### 10.1 Environment Setup
+
+1. Initialize Node project and install Jest:
+
+```bash
+npm init -y
+npm install --save-dev jest
+```
+
+2. In `package.json`, add:
+
+```json
+"scripts": {
+  "test": "jest"
+}
+```
+
+3. If necessary, add a Jest config file so tests can import ES modules or use CommonJS consistently.
+
+### 10.2 Test Targets
+
+Write tests for at least these functions (and any helpers they need):
+
+* `saveState(state)` / `loadState()`
+* Date/time helpers:
+
+  * `addDays(dateStr, n)`
+  * `getTasksInPeriod(tasks, from, to)`
+  * `getDelayedTasks(tasks, today)`
+* Report generation:
+
+  * `generateReport(appState, options)`
+
+Place test files under `__tests__/`, e.g.:
+
+* `__tests__/state.test.js`
+* `__tests__/dateHelpers.test.js`
+* `__tests__/report.test.js`
+
+### 10.3 Example Test Cases
+
+1. **saveState/loadState**
+
+   * Saving an `AppState` then loading it returns an object with the same structure/values.
+   * When no data in localStorage, `loadState()` returns `getInitialState()`.
+
+2. **Delayed tasks**
+
+   * For tasks where `plannedEnd < today` and `progress < 100`, `getDelayedTasks()` includes them.
+   * Tasks with `plannedEnd === today` or `progress === 100` are not considered delayed.
+
+3. **Period filter**
+
+   * `getTasksInPeriod()` returns tasks whose date ranges intersect the given period.
+   * Boundary conditions: tasks starting exactly at `from` or ending exactly at `to` are included.
+
+4. **Report generation**
+
+   * Completed tasks appear in the "completed" section.
+   * In-progress tasks appear with their progress %.
+   * Delayed tasks appear in the "delayed" section.
+   * Ad-hoc tasks appear only when `options.includeAdhoc` is `true`.
+
+Run `npm test` and ensure all tests pass.
+
+---
+
+## 11. Integration with Existing Repo
+
+All of the above requirements must be applied **within** the existing project structure of:
+
+* `https://github.com/suimintoreyo/gantt-chart-report.git`
+
+Instructions:
+
+1. Clone the repo and identify the main entry point and Gantt implementation.
+2. Integrate or refactor code to conform to:
+
+   * The data model and persistence layer.
+   * Direct manipulation (dragging/resizing) of Gantt task bars.
+   * Progress reporting.
+3. Keep or improve any existing features, without breaking the current basic behavior. If there are existing data structures that differ, either:
+
+   * Add thin adapters to map them to the `AppState`-style structures above, or
+   * Refactor in a way that is localized and well-commented.
+
+---
+
+## 12. Deliverables
+
+Codex should produce and/or update the following:
+
+* Application source code (HTML/CSS/JS) satisfying the functional and UX requirements.
+* Gantt chart implementation with direct mouse-based editing:
+
+  * Drag bar to move.
+  * Drag left edge to change start.
+  * Drag right edge to change end.
+  * Underlying dates and durations are updated, saved, and reflected in all views.
+* `AppState` persistence via localStorage with `loadState` / `saveState` utilities.
+* Progress report generation function and modal.
+* Test setup (`package.json`, Jest config) and test files under `__tests__/` that cover:
+
+  * State persistence.
+  * Date helper logic.
+  * Report generation.
+* A short note or comments in code explaining the main modules and how drag logic is implemented.
+
+Once these requirements are met, running the app in a browser and `npm test` in the project root should both succeed without errors.
