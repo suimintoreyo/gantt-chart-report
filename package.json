@@ -1,0 +1,12 @@
+{
+  "name": "gantt-chart-report",
+  "version": "1.0.0",
+  "description": "Vanilla JS Gantt chart progress and report app",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand"
+  },
+  "devDependencies": {
+    "jest": "29.7.0"
+  }
+}
