@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gantt Chart Progress & Report</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1>Gantt Chart Progress Manager</h1>
+      <p class="subtitle">Manage tasks, edit timelines directly, and generate weekly reports.</p>
+    </div>
+    <div class="header-actions">
+      <button id="generateReportBtn" class="primary">Generate Report</button>
+      <button id="resetStateBtn" class="ghost">Reset to Sample Data</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <h2>Project & Task Entry</h2>
+      <form id="taskForm" class="task-form">
+        <div class="field">
+          <label for="taskName">Task name</label>
+          <input id="taskName" name="taskName" required>
+        </div>
+        <div class="field">
+          <label for="plannedStart">Start date</label>
+          <input type="date" id="plannedStart" name="plannedStart" required>
+        </div>
+        <div class="field">
+          <label for="plannedEnd">End date</label>
+          <input type="date" id="plannedEnd" name="plannedEnd" required>
+        </div>
+        <div class="field">
+          <label for="progress">Progress (%)</label>
+          <input type="number" id="progress" name="progress" min="0" max="100" value="0" required>
+        </div>
+        <div class="field">
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            <option value="not_started">Not started</option>
+            <option value="in_progress">In progress</option>
+            <option value="completed">Completed</option>
+            <option value="on_hold">On hold</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="priority">Priority</label>
+          <select id="priority" name="priority">
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <button type="submit" class="primary">Add task</button>
+      </form>
+
+      <div class="task-list">
+        <div class="task-list-header">
+          <span>Task</span>
+          <span>Start</span>
+          <span>End</span>
+          <span>Progress</span>
+          <span>Status</span>
+        </div>
+        <div id="taskListBody" class="task-list-body"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Gantt Chart (drag to move or resize tasks)</h2>
+      <div id="ganttContainer" class="gantt-container"></div>
+    </section>
+  </main>
+
+  <section id="reportModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Progress Report</h3>
+        <button id="closeReportBtn" class="ghost">×</button>
+      </div>
+      <div class="modal-body">
+        <label class="checkbox">
+          <input type="checkbox" id="includeAdhoc" checked>
+          <span>Include ad-hoc tasks</span>
+        </label>
+        <textarea id="reportOutput" readonly></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="copyReportBtn" class="primary">Copy to clipboard</button>
+        <button id="regenReportBtn" class="secondary">Regenerate</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="toast" class="toast hidden">Copied!</div>
+
+  <script src="main.js"></script>
+</body>
+</html>
