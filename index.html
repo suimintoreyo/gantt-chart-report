@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ガントチャート進捗管理</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="project-controls">
+      <label>プロジェクト</label>
+      <select id="projectSelect"></select>
+      <button id="addProjectBtn" class="ghost">＋</button>
+      <button id="editProjectBtn" class="ghost">✎</button>
+      <button id="deleteProjectBtn" class="ghost">🗑</button>
+    </div>
+    <div class="view-controls">
+      <label>表示期間</label>
+      <div class="toggle-group" id="rangeToggle">
+        <button data-range="day" class="active">今日</button>
+        <button data-range="week">今週</button>
+        <button data-range="month">今月</button>
+      </div>
+      <div class="search-control">
+        <label for="taskSearch">タスク検索 (Ctrl+F)</label>
+        <input id="taskSearch" type="text" placeholder="タスク名を入力">
+      </div>
+    </div>
+    <div class="header-actions">
+      <div id="summary"></div>
+      <button id="reportBtn" class="primary">進捗報告文生成</button>
+      <button id="manualSaveBtn" class="ghost">Ctrl+S 保存</button>
+      <span id="saveStatus">保存済み</span>
+    </div>
+  </header>
+
+  <main class="main-layout">
+    <section class="tasks-panel">
+      <div class="panel-header">
+        <h2>タスク一覧</h2>
+        <div class="task-actions">
+          <button id="newTaskBtn">＋ タスク追加 (N)</button>
+          <label class="checkbox-inline"><input type="checkbox" id="showCompleted"> 完了も表示</label>
+        </div>
+      </div>
+      <div class="task-table" id="taskTable"></div>
+    </section>
+
+    <section class="gantt-panel">
+      <div class="panel-header">
+        <h2>ガントチャート</h2>
+        <div class="zoom-control">
+          <label>ズーム</label>
+          <input type="range" id="ganttZoom" min="0.5" max="2" step="0.1" value="1">
+        </div>
+      </div>
+      <div class="gantt-container">
+        <div class="gantt-header" id="ganttHeader"></div>
+        <div class="gantt-body" id="ganttBody"></div>
+        <div class="today-line" id="todayLine"></div>
+      </div>
+    </section>
+
+    <aside class="side-panel" id="sidePanel">
+      <div class="side-panel-header">
+        <h3>進捗更新</h3>
+        <button id="closeSidePanel" class="ghost">×</button>
+      </div>
+      <div id="sideContent"></div>
+    </aside>
+  </main>
+
+  <section class="bottom-tabs">
+    <div class="tab-buttons">
+      <button data-tab="work" class="active">作業ログ</button>
+      <button data-tab="adhoc">一時タスク</button>
+    </div>
+    <div class="tab-content" id="workLogTab"></div>
+    <div class="tab-content hidden" id="adhocTab"></div>
+  </section>
+
+  <button id="adhocFloat" class="floating">＋ 一時タスク</button>
+
+  <div class="modal hidden" id="projectModal">
+    <div class="modal-content">
+      <h3 id="projectModalTitle">プロジェクト</h3>
+      <label>名称<input id="projectNameInput" type="text"></label>
+      <label>開始日<input id="projectStartInput" type="date"></label>
+      <label>終了日<input id="projectEndInput" type="date"></label>
+      <label>状態
+        <select id="projectStatusInput">
+          <option value="planned">計画</option>
+          <option value="active">進行中</option>
+          <option value="completed">完了</option>
+          <option value="on_hold">保留</option>
+        </select>
+      </label>
+      <div class="modal-actions">
+        <button id="projectModalCancel" class="ghost">キャンセル</button>
+        <button id="projectModalSave" class="primary">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="reportModal">
+    <div class="modal-content large">
+      <h3>進捗報告文生成</h3>
+      <div class="modal-grid">
+        <label>期間開始<input type="date" id="reportStart"></label>
+        <label>期間終了<input type="date" id="reportEnd"></label>
+        <label>プロジェクト<select id="reportProject"></select></label>
+        <label class="checkbox-inline"><input type="checkbox" id="reportIncludeAdhoc" checked> 一時タスクを含める</label>
+      </div>
+      <textarea id="reportText" rows="10" readonly></textarea>
+      <div class="report-actions">
+        <button id="selectReport" class="ghost">全選択</button>
+        <button id="copyReport" class="ghost">クリップボードにコピー</button>
+        <button id="generateReport" class="primary">生成 (Ctrl+Enter)</button>
+      </div>
+      <button id="closeReport" class="ghost">閉じる</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="main.js"></script>
+</body>
+</html>
