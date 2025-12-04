@@ -1,0 +1,12 @@
+{
+  "name": "gantt-chart-report",
+  "version": "1.0.0",
+  "description": "Gantt chart progress manager with reporting and local persistence.",
+  "type": "module",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
