@@ -179,6 +179,22 @@ interface AppState {
 
 `AppState`全体をlocalStorageに保存します。
 
+### 2.1 ID生成方法
+
+すべてのエンティティ（Project, Task, WorkLog, AdhocTask）のIDは **UUID v4** を使用します。
+
+```js
+// ブラウザ標準APIを使用（Chrome 92+, Edge 92+）
+const generateId = () => crypto.randomUUID();
+// 例: "550e8400-e29b-41d4-a716-446655440000"
+```
+
+* **採用理由**：
+  - 外部ライブラリ不要
+  - 衝突の可能性が実質ゼロ
+  - 標準API使用でオフライン完全対応
+* **形式**: 36文字（ハイフン含む）、例: `"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"`
+
 ---
 
 ## 3. 永続化（localStorage）
