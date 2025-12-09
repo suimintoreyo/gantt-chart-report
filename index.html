@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ガントチャート進捗報告アプリ</title>
+  <link rel="stylesheet" href="css/bulma.min.css">
+  <link rel="stylesheet" href="css/bulma-prefers-dark.min.css">
+  <link rel="stylesheet" href="css/frappe-gantt.min.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <nav class="navbar is-dark">
+    <div class="navbar-brand">
+      <span class="navbar-item has-text-weight-bold">ガントチャート進捗報告</span>
+    </div>
+    <div class="navbar-menu is-active">
+      <div class="navbar-start">
+        <div class="navbar-item">
+          <div class="select is-small">
+            <select id="project-select">
+              <option value="">全プロジェクト</option>
+            </select>
+          </div>
+        </div>
+        <div class="navbar-item">
+          <button id="btn-manage-projects" class="button is-small is-light">プロジェクト管理</button>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <span class="tag is-info mr-2">今日期限: <span id="summary-due-today">0</span></span>
+          <span class="tag is-danger">遅延: <span id="summary-delayed">0</span></span>
+        </div>
+        <div class="navbar-item">
+          <button id="btn-generate-report" class="button is-primary is-small">進捗報告文生成</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- メインコンテンツ -->
+  <section class="section pt-4 pb-2">
+    <div class="container is-fluid">
+      <!-- ツールバー -->
+      <div class="level mb-3">
+        <div class="level-left">
+          <div class="level-item">
+            <button id="btn-new-task" class="button is-primary is-small">+ 新規タスク</button>
+          </div>
+          <div class="level-item">
+            <input type="text" id="task-search" class="input is-small" placeholder="タスク検索 (Ctrl+F)" style="width: 200px;">
+          </div>
+        </div>
+        <div class="level-right">
+          <div class="level-item">
+            <div class="buttons has-addons">
+              <button class="button is-small btn-zoom is-active" data-mode="Day">日</button>
+              <button class="button is-small btn-zoom" data-mode="Week">週</button>
+              <button class="button is-small btn-zoom" data-mode="Month">月</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ガントチャート -->
+      <div class="box mb-4">
+        <div id="gantt-container"></div>
+      </div>
+
+      <!-- タスクテーブル -->
+      <div class="box mb-4">
+        <h3 class="title is-6 mb-3">タスク一覧</h3>
+        <table class="table is-fullwidth is-hoverable is-narrow">
+          <thead>
+            <tr>
+              <th style="width: 30px;"></th>
+              <th>タスク名</th>
+              <th>担当者</th>
+              <th>進捗</th>
+              <th>開始日</th>
+              <th>終了日</th>
+              <th>ステータス</th>
+              <th>優先度</th>
+            </tr>
+          </thead>
+          <tbody id="task-table-body">
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 下部タブ -->
+      <div class="tabs is-small">
+        <ul>
+          <li class="is-active" data-tab="worklogs"><a>作業ログ</a></li>
+          <li data-tab="adhoc"><a>一時タスク</a></li>
+        </ul>
+      </div>
+
+      <!-- 作業ログタブ -->
+      <div id="tab-worklogs" class="tab-content box">
+        <table class="table is-fullwidth is-narrow is-hoverable">
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>タスク</th>
+              <th>作業内容</th>
+              <th>時間</th>
+              <th>進捗後</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="worklog-table-body">
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 一時タスクタブ -->
+      <div id="tab-adhoc" class="tab-content box is-hidden">
+        <table class="table is-fullwidth is-narrow is-hoverable">
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>タイトル</th>
+              <th>詳細</th>
+              <th>時間</th>
+              <th>関連プロジェクト</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="adhoc-table-body">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- フローティング一時タスクボタン -->
+  <button id="btn-add-adhoc" class="button is-primary is-rounded">+ 一時タスク</button>
+
+  <!-- トースト -->
+  <div id="toast-container"></div>
+
+  <!-- タスク詳細モーダル -->
+  <div id="modal-task-detail" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">タスク詳細</p>
+        <button class="delete modal-close" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body" id="task-detail-body">
+      </section>
+      <footer class="modal-card-foot">
+        <button id="btn-edit-from-detail" class="button is-info">編集</button>
+        <button class="button modal-close">閉じる</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- プロジェクト管理モーダル -->
+  <div id="modal-project" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">プロジェクト管理</p>
+        <button class="delete modal-close" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <div id="project-list"></div>
+        <div id="project-form" class="is-hidden">
+          <h4 id="project-form-title" class="title is-5"></h4>
+          <div class="field">
+            <label class="label">プロジェクト名 *</label>
+            <input type="text" id="project-name" class="input">
+          </div>
+          <div class="field">
+            <label class="label">オーナー</label>
+            <input type="text" id="project-owner" class="input">
+          </div>
+          <div class="columns">
+            <div class="column">
+              <div class="field">
+                <label class="label">開始日</label>
+                <input type="date" id="project-start" class="input">
+              </div>
+            </div>
+            <div class="column">
+              <div class="field">
+                <label class="label">終了日</label>
+                <input type="date" id="project-end" class="input">
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">ステータス</label>
+            <div class="select is-fullwidth">
+              <select id="project-status">
+                <option value="planned">計画中</option>
+                <option value="active">進行中</option>
+                <option value="completed">完了</option>
+                <option value="on_hold">保留</option>
+              </select>
+            </div>
+          </div>
+          <div class="buttons">
+            <button id="btn-save-project" class="button is-primary">保存</button>
+            <button id="btn-cancel-project" class="button">キャンセル</button>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button id="btn-new-project" class="button is-primary">+ 新規プロジェクト</button>
+        <button class="button modal-close">閉じる</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- タスク編集モーダル -->
+  <div id="modal-task" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p id="task-form-title" class="modal-card-title">タスク</p>
+        <button class="delete modal-close" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="field">
+          <label class="label">タスク名 *</label>
+          <input type="text" id="task-name-input" class="input">
+        </div>
+        <div class="field">
+          <label class="label">プロジェクト</label>
+          <div class="select is-fullwidth">
+            <select id="task-project"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">担当者</label>
+          <input type="text" id="task-assignee" class="input">
+        </div>
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label">開始日</label>
+              <input type="date" id="task-start" class="input">
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="label">終了日</label>
+              <input type="date" id="task-end" class="input">
+            </div>
+          </div>
+        </div>
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label">ステータス</label>
+              <div class="select is-fullwidth">
+                <select id="task-status-select">
+                  <option value="not_started">未着手</option>
+                  <option value="in_progress">進行中</option>
+                  <option value="completed">完了</option>
+                  <option value="on_hold">保留</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="label">優先度</label>
+              <div class="select is-fullwidth">
+                <select id="task-priority">
+                  <option value="high">高</option>
+                  <option value="medium">中</option>
+                  <option value="low">低</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">進捗 (%)</label>
+          <input type="number" id="task-progress-input" class="input" min="0" max="100" value="0">
+        </div>
+        <div class="field">
+          <label class="label">メモ</label>
+          <textarea id="task-notes-input" class="textarea" rows="2"></textarea>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button id="btn-save-task" class="button is-primary">保存</button>
+        <button id="btn-delete-task" class="button is-danger is-hidden">削除</button>
+        <button class="button modal-close">キャンセル</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- 一時タスクモーダル -->
+  <div id="modal-adhoc" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">一時タスク追加</p>
+        <button class="delete modal-close" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="field">
+          <label class="label">日付</label>
+          <input type="date" id="adhoc-date" class="input">
+        </div>
+        <div class="field">
+          <label class="label">タイトル *</label>
+          <input type="text" id="adhoc-title" class="input">
+        </div>
+        <div class="field">
+          <label class="label">詳細</label>
+          <textarea id="adhoc-detail" class="textarea" rows="2"></textarea>
+        </div>
+        <div class="field">
+          <label class="label">作業時間 (h)</label>
+          <input type="number" id="adhoc-hours" class="input" min="0" step="0.5">
+        </div>
+        <div class="field">
+          <label class="label">関連プロジェクト</label>
+          <div class="select is-fullwidth">
+            <select id="adhoc-project"></select>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button id="btn-save-adhoc" class="button is-primary">追加</button>
+        <button class="button modal-close">キャンセル</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- 進捗報告モーダル -->
+  <div id="modal-report" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" style="width: 800px;">
+      <header class="modal-card-head">
+        <p class="modal-card-title">進捗報告文生成</p>
+        <button class="delete modal-close" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="columns">
+          <div class="column is-6">
+            <div class="field">
+              <label class="label">期間</label>
+              <div class="buttons has-addons mb-2">
+                <button id="report-preset-today" class="button is-small">今日</button>
+                <button id="report-preset-week" class="button is-small">今週</button>
+                <button id="report-preset-month" class="button is-small">今月</button>
+              </div>
+              <div class="columns">
+                <div class="column">
+                  <input type="date" id="report-from" class="input is-small">
+                </div>
+                <div class="column is-narrow has-text-centered pt-3">〜</div>
+                <div class="column">
+                  <input type="date" id="report-to" class="input is-small">
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">対象プロジェクト</label>
+              <div id="report-projects"></div>
+            </div>
+            <div class="field">
+              <label class="checkbox">
+                <input type="checkbox" id="report-include-adhoc" checked>
+                一時タスクを含める
+              </label>
+            </div>
+            <button id="btn-generate" class="button is-primary">生成</button>
+          </div>
+          <div class="column is-6">
+            <div class="field">
+              <label class="label">報告文</label>
+              <textarea id="report-output" class="textarea" rows="15" readonly></textarea>
+            </div>
+            <button id="btn-copy-report" class="button is-success">クリップボードにコピー</button>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button modal-close">閉じる</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/frappe-gantt.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

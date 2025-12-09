@@ -1,0 +1,96 @@
+/**
+ * css/app.css
+ * カスタムスタイル（最小限）
+ */
+
+/* ガントチャート優先度色 */
+.gantt-bar-high .bar {
+  fill: #F14668 !important;
+}
+
+.gantt-bar-medium .bar {
+  fill: #FFE08A !important;
+}
+
+.gantt-bar-low .bar {
+  fill: #48C78E !important;
+}
+
+.gantt-bar-delayed .bar {
+  stroke: #F14668 !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 4 2 !important;
+}
+
+/* ガントバーハイライト */
+.gantt-bar-wrapper.highlighted .bar {
+  stroke: #3273dc !important;
+  stroke-width: 3px !important;
+}
+
+/* テーブル選択行 */
+#task-table-body tr.is-selected {
+  background-color: rgba(50, 115, 220, 0.2);
+}
+
+#task-table-body tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+}
+
+/* 進捗テキスト */
+.progress-text {
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+}
+
+/* トースト */
+#toast-container {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 9999;
+}
+
+#toast-container .notification {
+  min-width: 250px;
+}
+
+/* フローティングボタン */
+#btn-add-adhoc {
+  position: fixed;
+  bottom: 5rem;
+  right: 1.5rem;
+  z-index: 100;
+}
+
+/* ズームボタン */
+.btn-zoom.is-active {
+  background-color: #3273dc;
+  color: white;
+}
+
+/* ガントコンテナ */
+#gantt-container {
+  min-height: 200px;
+  overflow-x: auto;
+}
+
+#gantt-container svg {
+  width: 100%;
+}
+
+/* ガントポップアップ */
+.gantt-popup {
+  padding: 0.5rem;
+}
+
+.gantt-popup h4 {
+  margin: 0 0 0.5rem 0;
+  font-weight: bold;
+}
+
+.gantt-popup p {
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+}
