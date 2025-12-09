@@ -20,19 +20,67 @@ Additionally, unit tests should be added for key logic using Jest.
 * The app should run by just opening `index.html` (or the repo's existing entry HTML) in a browser.
 * Use **localStorage** for data persistence.
 * For testable logic, set up a **Node + Jest** environment.
+* **No npm/build tools at runtime**: all CSS/JS libraries must be locally stored for offline use.
+
+### 0.1 CSS Framework: Bulma
+
+* **Adopted framework**: Bulma (v0.9.x or latest stable)
+* **Reason for adoption**:
+  - Rich color variations (`is-primary`, `is-danger`, `is-success`, `is-warning`, `is-info`)
+  - Built-in components: tabs, modals, notifications, cards, navbar
+  - Minimal custom CSS required
+  - No JavaScript dependency (pure CSS)
+  - Offline-capable (local file storage)
+* **File size**: ~25KB (minified + gzipped)
+* **Dark mode**: Use `bulma-prefers-dark.css` add-on or custom CSS variables
+
+### 0.2 Gantt Chart Library: Frappe Gantt (Candidate - High Priority)
+
+* **Status**: High priority candidate, pending final decision
+* **Reason for consideration**:
+  - Built-in drag & drop (move entire bar)
+  - Built-in resize (drag left/right edges)
+  - Built-in progress display
+  - Built-in today line
+  - Support for custom classes (priority color coding)
+  - Lightweight (~40KB)
+  - MIT License
+  - Offline-capable
+* **If not adopted**: Implement custom Gantt chart with similar functionality
+
+### 0.3 Custom CSS Policy
+
+* **Goal**: Minimize custom CSS (target: 20-30 lines or less)
+* Maximize use of Bulma's built-in classes
+* Priority color coding: reuse `is-danger`, `is-warning`, `is-success`, `is-info`
+* Only custom styles needed:
+  - Layout adjustments (grid setup)
+  - Gantt chart integration styles
+  - Delayed task visual indicator
 
 ### Expected Files (new or updated)
 
-* Main app (if not already present):
-
-  * `index.html` (or existing entry HTML in the repo)
-  * `style.css`
-  * `main.js` and/or additional JS modules (e.g., `state.js`, `gantt.js`, `report.js`).
-* Tests & tooling:
-
-  * `package.json`
-  * Jest config file if needed (e.g., `jest.config.mjs` or `jest.config.js`).
-  * `__tests__/` directory with test files.
+```
+project/
+├── index.html
+├── css/
+│   ├── bulma.min.css            ← Bulma framework (25KB)
+│   ├── bulma-prefers-dark.min.css ← Dark mode support (optional)
+│   ├── frappe-gantt.css         ← Gantt chart styles (if adopted)
+│   └── app.css                  ← Minimal custom CSS
+├── js/
+│   ├── frappe-gantt.min.js      ← Gantt chart library (if adopted)
+│   ├── state.js                 ← State management & persistence
+│   ├── gantt.js                 ← Gantt chart integration
+│   ├── report.js                ← Report generation
+│   └── main.js                  ← Entry point
+├── __tests__/
+│   ├── state.test.js
+│   ├── dateHelpers.test.js
+│   └── report.test.js
+├── package.json                 ← Jest configuration
+└── jest.config.js               ← Jest settings (if needed)
+```
 
 For the existing repo `gantt-chart-report`, adapt the above structure to what is already in place; do not break existing build/launch flow.
 
@@ -73,7 +121,8 @@ Use the following conceptual data structures. Implementation can be plain JS obj
 
 ```ts
 type ProjectStatus = 'planned' | 'active' | 'completed' | 'on_hold';
-\ ninterface Project {
+
+interface Project {
   id: string;
   name: string;
   owner?: string;
@@ -190,7 +239,7 @@ Additionally implement:
 ### 3.3 Auto-Save & Manual Save
 
 * **Auto-save:** On relevant state changes (task edited, dates moved, etc.), save after a short debounce (e.g. 500–2000 ms).
-* **Manual save:** `Ctrl+S` triggers an explicit `saveState(currentState)` and shows a small toast “保存しました” or similar.
+* **Manual save:** `Ctrl+S` triggers an explicit `saveState(currentState)` and shows a small toast "保存しました" or similar.
 
 ---
 
@@ -198,34 +247,50 @@ Additionally implement:
 
 ### 4.1 Overall Layout (Desktop)
 
-Single-page layout:
+Single-page layout using **Bulma components**:
 
-* **Top header**
+* **Top header** (`.navbar`)
 
-  * Project selection dropdown.
+  * Project selection dropdown (`.select`).
   * Date range selector (e.g., today / this week / this month).
-  * A small “Today’s summary” area (number of tasks due today, delayed tasks, etc. – can be simple).
-  * Button: **"進捗報告文生成"** (opens report modal).
+  * A small "Today's summary" area (number of tasks due today, delayed tasks, etc. – can be simple).
+  * Button: **"進捗報告文生成"** (`.button.is-primary`, opens report modal).
 
-* **Center: Two main panes (left & right)**
+* **Center: Two main panes (left & right)** (CSS Grid or `.columns`)
 
-  * **Left:** Task list table.
-  * **Right:** Gantt chart.
+  * **Left:** Task list table (`.table`).
+  * **Right:** Gantt chart (Frappe Gantt or custom).
 
-* **Bottom area:** Tabbed view
+* **Bottom area:** Tabbed view (`.tabs`)
 
   * Tabs: `作業ログ` | `一時タスク`.
   * Each tab shows a table list for that category.
 
 * **Right side (or similar):**
 
-  * **Side panel** for selected task: details and progress update controls.
+  * **Side panel** (`.card`) for selected task: details and progress update controls.
 
 * **Floating button (bottom-right):**
 
-  * `＋一時タスク` – quick entry for ad-hoc tasks from any view.
+  * `＋一時タスク` (`.button.is-primary.is-rounded`) – quick entry for ad-hoc tasks from any view.
 
-### 4.2 Common UX Rules
+### 4.2 Bulma Components Mapping
+
+| UI Element | Bulma Component |
+|------------|-----------------|
+| Header/Navigation | `.navbar` |
+| Buttons | `.button`, `.button.is-primary`, `.button.is-danger`, etc. |
+| Form inputs | `.input`, `.select`, `.textarea` |
+| Tables | `.table.is-striped.is-hoverable` |
+| Cards | `.card`, `.card-header`, `.card-content`, `.card-footer` |
+| Modals | `.modal`, `.modal-card` |
+| Tabs | `.tabs`, `.tab-content` (custom) |
+| Notifications | `.notification.is-success`, `.notification.is-danger` |
+| Progress bar | `.progress.is-primary` |
+| Tags/Badges | `.tag.is-danger`, `.tag.is-warning`, `.tag.is-success` |
+| Dropdown | `.dropdown` |
+
+### 4.3 Common UX Rules
 
 * Prioritize **low click count**:
 
@@ -247,7 +312,7 @@ Single-page layout:
 
   * Hover states on buttons and rows.
   * Selection highlight (clicked task row and its Gantt bar).
-  * Small auto-save indicator (e.g., text in the corner: “自動保存済み”).
+  * Small auto-save indicator using Bulma `.notification` (e.g., "自動保存済み").
 
 ---
 
@@ -263,8 +328,8 @@ At minimum:
 * Progress %
 * Start date
 * End date
-* Status (未着手 / 進行中 / 完了 / 保留)
-* Priority (高 / 中 / 低)
+* Status (未着手 / 進行中 / 完了 / 保留) – use `.tag` with colors
+* Priority (高 / 中 / 低) – use `.tag.is-danger`, `.tag.is-warning`, `.tag.is-info`
 
 ### 5.2 Behavior
 
@@ -283,7 +348,7 @@ At minimum:
 * **Row selection**:
 
   * Selecting a row highlights the corresponding bar in the Gantt chart.
-  * The selected task’s details are shown in the side panel.
+  * The selected task's details are shown in the side panel.
 * **Deletion**:
 
   * `Delete` key or a row menu can delete the task.
@@ -303,9 +368,20 @@ The Gantt chart is central and must support **direct mouse manipulation** of tas
   * Entire bar = planned duration (from `plannedStart` to `plannedEnd`).
   * Internal fill = progress % (left-to-right fill proportion).
 * A vertical line indicates **today**.
-* Delayed tasks are visually distinctive (e.g., different color/border). A task is “delayed” when `plannedEnd < today` and `progress < 100`.
+* Delayed tasks are visually distinctive (e.g., different color/border). A task is "delayed" when `plannedEnd < today` and `progress < 100`.
 
-### 6.2 Mouse-Based Editing (Core Requirement)
+### 6.2 Priority Color Coding
+
+Use Bulma color classes via `custom_class` (if using Frappe Gantt) or direct CSS:
+
+| Priority | Color Class | Visual |
+|----------|-------------|--------|
+| High (高) | `is-danger` / red | #F14668 |
+| Medium (中) | `is-warning` / yellow | #FFE08A |
+| Low (低) | `is-success` / green | #48C78E |
+| Delayed | `is-danger` + dashed border | Red with pattern |
+
+### 6.3 Mouse-Based Editing (Core Requirement)
 
 For each bar representing a task, implement **three kinds of mouse interactions**:
 
@@ -324,7 +400,7 @@ Use a day-based snapping system based on pixel movements.
   const deltaDays = Math.round(deltaX / dayWidth); // dayWidth: pixels per day
   ```
 
-* While dragging, update the bar’s position/width visually in real time.
+* While dragging, update the bar's position/width visually in real time.
 
 * On drag end (`mouseup` / `pointerup`):
 
@@ -333,7 +409,7 @@ Use a day-based snapping system based on pixel movements.
   * Persist via `saveState` (with debounce).
   * Refresh any related UI (table, side panel dates, etc.).
 
-#### 6.2.1 Entire Bar Drag (Shift Start & End)
+#### 6.3.1 Entire Bar Drag (Shift Start & End)
 
 * Active when clicking and dragging **the middle area** of the bar (not the edges).
 * Behavior:
@@ -356,9 +432,9 @@ updateTaskDates(task.id, newStart, newEnd);
   * Clamp so dates do not exceed global min/max timeline (if any).
   * If dependency logic exists, ensure not to violate basic constraints, or at least document behavior.
 
-#### 6.2.2 Left Edge Drag (Change Start Only)
+#### 6.3.2 Left Edge Drag (Change Start Only)
 
-* A resize handle on the **left edge** (can be a separate DOM element or region) starts a “resize-left” drag.
+* A resize handle on the **left edge** (can be a separate DOM element or region) starts a "resize-left" drag.
 * Behavior:
 
   * Drag left: `plannedStart` moves earlier (duration increases).
@@ -376,9 +452,9 @@ if (new Date(newStart) > new Date(task.plannedEnd)) {
 updateTaskDates(task.id, newStart, task.plannedEnd);
 ```
 
-#### 6.2.3 Right Edge Drag (Change End Only)
+#### 6.3.3 Right Edge Drag (Change End Only)
 
-* A resize handle on the **right edge** starts a “resize-right” drag.
+* A resize handle on the **right edge** starts a "resize-right" drag.
 * Behavior:
 
   * Drag right: `plannedEnd` moves later (duration increases).
@@ -395,37 +471,43 @@ if (new Date(newEnd) < new Date(task.plannedStart)) {
 updateTaskDates(task.id, task.plannedStart, newEnd);
 ```
 
-### 6.3 Implementation Details
+### 6.4 Implementation Details
 
-* It is acceptable to implement the Gantt chart with:
-
-  * HTML elements (divs) + absolute positioning, or
-  * SVG.
+* If using **Frappe Gantt**: leverage built-in drag/resize functionality with callbacks:
+  ```js
+  const gantt = new Gantt('#gantt', tasks, {
+    on_click: (task) => showTaskDetail(task),
+    on_date_change: (task, start, end) => updateTaskDates(task.id, start, end),
+    on_progress_change: (task, progress) => updateTaskProgress(task.id, progress),
+    view_mode: 'Day'
+  });
+  ```
+* If implementing custom: use HTML elements (divs) + absolute positioning, or SVG.
 * Each bar must be associated with the task ID (e.g., `data-task-id`).
-* Use `pointerdown` / `pointermove` / `pointerup` or traditional mouse events (`mousedown` / `mousemove` / `mouseup`).
+* Use `pointerdown` / `pointermove` / `pointerup` or traditional mouse events.
 * While IME is active for text fields, do not accidentally trigger drag logic.
 
 ---
 
 ## 7. Side Panel – Task Detail & Progress Update
 
-When a task is selected (from table or Gantt bar), display a side panel with:
+When a task is selected (from table or Gantt bar), display a side panel (`.card`) with:
 
 * Task name (editable).
 * Project, assignee.
 * Planned start & end dates (editable; must stay in sync with Gantt changes).
-* Status.
+* Status (`.select`).
 * Progress controls:
 
-  * Slider from 0–100.
+  * Slider from 0–100 (`<input type="range">`).
   * Numeric input for exact %.
-* Notes field.
+* Notes field (`.textarea`).
 * Work log entry:
 
-  * Today’s date (default).
+  * Today's date (default).
   * Work description.
   * Hours.
-  * Button: “今日の作業ログに追加” – creates a `WorkLog` entry.
+  * Button: "今日の作業ログに追加" (`.button.is-primary`) – creates a `WorkLog` entry.
 
 All changes must update `AppState` and then `saveState`.
 
@@ -433,9 +515,11 @@ All changes must update `AppState` and then `saveState`.
 
 ## 8. Bottom Tabs – Logs & Ad-hoc Tasks
 
+Use Bulma `.tabs` component for tab navigation.
+
 ### 8.1 作業ログ (Work Logs)
 
-* Table columns:
+* Table columns (`.table`):
 
   * Date
   * Task name
@@ -459,7 +543,7 @@ All changes must update `AppState` and then `saveState`.
 * Features:
 
   * Add/edit/delete.
-  * Quick-add via the floating `＋一時タスク` button (opens a small modal or side panel):
+  * Quick-add via the floating `＋一時タスク` button (opens a `.modal`):
 
     * Date (default to today).
     * Title.
@@ -471,7 +555,7 @@ All changes must update `AppState` and then `saveState`.
 
 ## 9. Progress Report Generation
 
-Provide a **modal** dialog invoked from the main header button "進捗報告文生成".
+Provide a **modal** dialog (`.modal.modal-card`) invoked from the main header button "進捗報告文生成".
 
 ### 9.1 Modal Options
 
@@ -524,10 +608,10 @@ The resulting text should follow a structure like:
 * Show a large textarea containing the generated report.
 * Buttons:
 
-  * Generate / Regenerate.
-  * Copy to clipboard.
-  * Close.
-* Optional: auto-select and auto-copy after generation, with a small toast notification.
+  * Generate / Regenerate (`.button.is-primary`).
+  * Copy to clipboard (`.button.is-success`).
+  * Close (`.button`).
+* Optional: auto-select and auto-copy after generation, with a small toast notification (`.notification`).
 
 ---
 
@@ -644,3 +728,14 @@ Codex should produce and/or update the following:
 * A short note or comments in code explaining the main modules and how drag logic is implemented.
 
 Once these requirements are met, running the app in a browser and `npm test` in the project root should both succeed without errors.
+
+---
+
+## 13. Pending / Undecided Items
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Frappe Gantt adoption | **Pending (High Priority)** | Final decision after evaluation |
+| Dark mode implementation | Undecided | `bulma-prefers-dark.css` or custom CSS variables |
+| Dependency arrows display | Under consideration | Frappe Gantt supports this |
+| Mobile/responsive support | Out of scope | Desktop-first, may consider later |
