@@ -53,7 +53,7 @@
 
 ## 4. UI 基盤ライブラリのインストール
 
-- [ ] 依存ライブラリのインストール
+- [x] 依存ライブラリのインストール（shadcn 全コンポーネント追加時に一括反映済み）
 
   ```bash
   npm install next-themes @supabase/supabase-js
@@ -64,17 +64,21 @@
 
 - React 19 環境では `gantt-task-react` が非対応のため、代替として `@svar-ui/react-gantt` を採用
 
-- [ ] shadcn/ui の初期化（CLI）
+- [x] shadcn の初期化（最新 CLI）
 
   ```bash
-  npx shadcn-ui@latest init
+  npx shadcn@latest init
   ```
 
-- [ ] 代表的な UI コンポーネントを導入
+- Style: New York / Base color: Neutral を選択済み
+
+- [x] shadcn コンポーネントの追加（全コンポーネントを選択済み）
 
   ```bash
-  npx shadcn-ui@latest add button input textarea dialog table tabs select label
+  npx shadcn@latest add button input textarea dialog table tabs select label ...
   ```
+
+- 全コンポーネント追加済みのため、再実行は不要
 
 - [ ] コミット（`chore: install ui and utility libs`）
 

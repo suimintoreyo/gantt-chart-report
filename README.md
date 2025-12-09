@@ -22,7 +22,7 @@
 ## 技術スタック
 - 言語/フレームワーク: TypeScript, Next.js 14+ (App Router), React
 - ホスティング/バックエンド: Vercel, Supabase (PostgreSQL + Auth)
-- UI: Tailwind CSS, shadcn/ui, next-themes
+- UI: Tailwind CSS, shadcn（shadcn/ui, CLI `shadcn@latest`, Style: New York, Base color: Neutral。`components/ui` に全コンポーネントを生成済み）, next-themes
 - フォーム/バリデーション: react-hook-form, Zod
 - 日付: date-fns
 - ガント: @svar-ui/react-gantt
@@ -42,7 +42,8 @@
 ## セットアップの方向性（開発時）
 - Supabase プロジェクトを用意し、上記テーブルを作成（`ON DELETE CASCADE` で子テーブルを連鎖削除）。
 - Next.js (App Router) プロジェクトを作成し、`.env` に Supabase の URL / anon key を設定。
-- 依存インストール例: `npm install next react react-dom tailwindcss supabase-js @supabase/auth-helpers-nextjs date-fns react-hook-form zod @svar-ui/react-gantt class-variance-authority lucide-react next-themes`
+- shadcn は `shadcn@latest init` 済み（Style: New York, Base color: Neutral）かつコンポーネントを一式追加済み。`components/ui` を再利用すること。
+- 依存インストール例: `npm install next react react-dom tailwindcss supabase-js @supabase/auth-helpers-nextjs date-fns react-hook-form zod @svar-ui/react-gantt class-variance-authority lucide-react next-themes`（実際の依存は `package.json` を参照、shadcn の追加コンポーネントによる Radix/UI ライブラリも含む）
 - ローカル開発: `npm run dev`
 - テスト（必要に応じて）: `npm test` または `npm run lint`
 

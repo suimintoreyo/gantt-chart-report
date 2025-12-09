@@ -30,7 +30,7 @@
 - フレームワーク: Next.js (App Router, TypeScript, `src/app` 構成)
 - スタイリング:
   - Tailwind CSS
-  - shadcn/ui
+  - shadcn（shadcn/ui、CLI は `shadcn@latest`、Style: New York、Base color: Neutral。`components/ui` に主要コンポーネント一式を生成済み）
   - next-themes
 - バックエンド:
   - Supabase (PostgreSQL + Auth)
@@ -66,7 +66,7 @@
 ### 4.1 Next.js プロジェクト構成の整備
 
 - App Router 前提 (`src/app`) でページとレイアウトを実装すること
-- Tailwind + shadcn/ui + next-themes を前提にした UI 実装
+- Tailwind + shadcn（Neutral ベースカラー） + next-themes を前提にした UI 実装
 - 以下の URL 構成をベースにしたページファイルの作成:
 
   - `/login` … ログイン画面
@@ -79,7 +79,7 @@
 
 ### 4.2 UI コンポーネント実装
 
-- shadcn/ui を利用したフォーム・モーダル・テーブル・タブなどの実装
+- shadcn を利用したフォーム・モーダル・テーブル・タブなどの実装。`components/ui` に全コンポーネントを生成済みのため、既存のものを再利用し、重複追加を避けること
 - Tailwind のクラス名は読みやすさを意識して整理すること
 - ダークモードでは `dark:` プレフィックスや shadcn のトークンを利用
 
@@ -129,7 +129,7 @@
 - Next.js App Router の慣習に従うこと
   - ページコンポーネントは `src/app/.../page.tsx`
   - レイアウトは `src/app/.../layout.tsx`
-- UI は shadcn/ui コンポーネント + Tailwind を基本とし、
+- UI は shadcn コンポーネント + Tailwind を基本とし、
   独自 CSS の乱用は避けること
 
 ---

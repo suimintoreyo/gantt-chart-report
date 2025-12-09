@@ -47,7 +47,7 @@
 - 認証 / データベース：**Supabase（PostgreSQL + Auth）**
 - UI フレームワーク／ライブラリ：
   - Tailwind CSS
-  - shadcn/ui
+  - shadcn（CLI: `shadcn@latest`, Style: New York, Base color: Neutral。`components/ui` に全コンポーネントを生成済み）
   - next-themes（テーマ管理）
 - ガントチャートライブラリ：
   - `@svar-ui/react-gantt`（React 19 で利用可能なガントチャート。`gantt-task-react` は非対応のため置き換え）
@@ -62,7 +62,7 @@
   - Next.js 14 以降（App Router 前提）
 - スタイリング
   - Tailwind CSS
-  - shadcn/ui（Radix UI ベースのコンポーネント）
+  - shadcn（shadcn/ui、Radix UI ベース。Style: New York、Base color: Neutral。`components/ui` にコンポーネント一式を生成済み）
 - テーマ
   - next-themes による `light / dark / system` 切り替え
 - バリデーション・フォーム
@@ -436,7 +436,8 @@
 ### 8.2 Codex に任せること
 
 - 各ページ（`/projects`, `/projects/[id]/gantt` 等）のコンポーネント実装
-- Tailwind + shadcn/ui を用いた UI レイアウト・スタイルの組み立て
+- Tailwind + shadcn を用いた UI レイアウト・スタイルの組み立て
+  - Style: New York / Base color: Neutral。`components/ui` に全コンポーネント生成済みのため再追加不要
 - Supabase クライアント呼び出し（CRUD）の雛形コード
 - react-hook-form + Zod を用いたフォーム実装
 - @svar-ui/react-gantt を用いたガントチャート表示コンポーネントの実装
