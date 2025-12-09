@@ -1,123 +1,118 @@
-# Gantt Chart Progress & Report App – Requirements (for Codex)
+# ガントチャート進捗・報告アプリ – 要件定義書
 
-This document defines the requirements for implementing and extending a Gantt chart–based progress management & reporting app. The implementation will be driven by Codex based on this specification.
+本ドキュメントは、ガントチャートベースの進捗管理・報告アプリの実装および拡張に関する要件を定義します。
 
-The work has **two main scopes**:
+本プロジェクトには**2つの主要スコープ**があります：
 
-1. Implement / refine a browser-based Gantt progress-report app (Vanilla JS, HTML, CSS) with a strong focus on GUI usability and local persistence.
-2. For the existing repository
-   `https://github.com/suimintoreyo/gantt-chart-report.git`
-   add **direct mouse-based editing** of each Gantt task bar (drag to move/resize) and ensure that underlying dates and durations are updated correctly.
+1. ブラウザベースのガントチャート進捗報告アプリの実装・改良（Vanilla JS、HTML、CSS）。GUI操作性とローカル永続化に重点を置く。
+2. 既存リポジトリ `https://github.com/suimintoreyo/gantt-chart-report.git` に対して、各ガントチャートのタスクバーを**マウスで直接編集**（ドラッグで移動・リサイズ）できる機能を追加し、日付と期間が正しく更新されるようにする。
 
-Additionally, unit tests should be added for key logic using Jest.
+また、主要ロジックに対してJestを使用したユニットテストを追加します。
 
 ---
 
-## 0. Tech Stack & Project Structure
+## 0. 技術スタック・プロジェクト構成
 
-* **Frontend only**; runs in a modern desktop browser (latest Chrome/Edge).
-* **No frontend frameworks**: use **Vanilla JavaScript**, **HTML**, and **CSS** only.
-* The app should run by just opening `index.html` (or the repo's existing entry HTML) in a browser.
-* Use **localStorage** for data persistence.
-* For testable logic, set up a **Node + Jest** environment.
-* **No npm/build tools at runtime**: all CSS/JS libraries must be locally stored for offline use.
+* **フロントエンドのみ**：モダンなデスクトップブラウザ（最新のChrome/Edge）で動作
+* **フロントエンドフレームワーク不使用**：**Vanilla JavaScript**、**HTML**、**CSS**のみを使用
+* `index.html`（または既存のエントリーHTML）をブラウザで開くだけでアプリが動作すること
+* データ永続化には**localStorage**を使用
+* テスト可能なロジックには**Node + Jest**環境を構築
+* **ランタイムでのnpm/ビルドツール不使用**：すべてのCSS/JSライブラリはオフライン使用のためローカルに保存
 
-### 0.1 CSS Framework: Bulma
+### 0.1 CSSフレームワーク：Bulma
 
-* **Adopted framework**: Bulma (v0.9.x or latest stable)
-* **Reason for adoption**:
-  - Rich color variations (`is-primary`, `is-danger`, `is-success`, `is-warning`, `is-info`)
-  - Built-in components: tabs, modals, notifications, cards, navbar
-  - Minimal custom CSS required
-  - No JavaScript dependency (pure CSS)
-  - Offline-capable (local file storage)
-* **File size**: ~25KB (minified + gzipped)
-* **Dark mode**: Use `bulma-prefers-dark.css` add-on or custom CSS variables
+* **採用フレームワーク**：Bulma（v0.9.x または最新安定版）
+* **採用理由**：
+  - 豊富な色バリエーション（`is-primary`、`is-danger`、`is-success`、`is-warning`、`is-info`）
+  - 内蔵コンポーネント：タブ、モーダル、通知、カード、ナビバー
+  - カスタムCSSが最小限で済む
+  - JavaScript依存なし（純粋なCSS）
+  - オフライン対応可能（ローカルファイル保存）
+* **ファイルサイズ**：約25KB（minified + gzip）
+* **ダークモード**：`bulma-prefers-dark.css`アドオンまたはカスタムCSS変数を使用
 
-### 0.2 Gantt Chart Library: Frappe Gantt (Candidate - High Priority)
+### 0.2 ガントチャートライブラリ：Frappe Gantt（候補・優先度高）
 
-* **Status**: High priority candidate, pending final decision
-* **Reason for consideration**:
-  - Built-in drag & drop (move entire bar)
-  - Built-in resize (drag left/right edges)
-  - Built-in progress display
-  - Built-in today line
-  - Support for custom classes (priority color coding)
-  - Lightweight (~40KB)
-  - MIT License
-  - Offline-capable
-* **If not adopted**: Implement custom Gantt chart with similar functionality
+* **ステータス**：優先度の高い候補、最終決定は保留中
+* **検討理由**：
+  - ドラッグ＆ドロップ内蔵（バー全体の移動）
+  - リサイズ内蔵（左右端のドラッグ）
+  - 進捗表示内蔵
+  - 今日の線（トゥデイライン）内蔵
+  - カスタムクラス対応（優先度による色分け）
+  - 軽量（約40KB）
+  - MITライセンス
+  - オフライン対応可能
+* **不採用の場合**：同様の機能を持つカスタムガントチャートを実装
 
-### 0.3 Custom CSS Policy
+### 0.3 カスタムCSS方針
 
-* **Goal**: Minimize custom CSS (target: 20-30 lines or less)
-* Maximize use of Bulma's built-in classes
-* Priority color coding: reuse `is-danger`, `is-warning`, `is-success`, `is-info`
-* Only custom styles needed:
-  - Layout adjustments (grid setup)
-  - Gantt chart integration styles
-  - Delayed task visual indicator
+* **目標**：カスタムCSSを最小限に（目標：20〜30行以下）
+* Bulmaの内蔵クラスを最大限活用
+* 優先度の色分け：`is-danger`、`is-warning`、`is-success`、`is-info`を再利用
+* カスタムスタイルが必要な箇所：
+  - レイアウト調整（グリッド設定）
+  - ガントチャート統合スタイル
+  - 遅延タスクの視覚的インジケーター
 
-### Expected Files (new or updated)
+### 想定ファイル構成（新規または更新）
 
 ```
 project/
 ├── index.html
 ├── css/
-│   ├── bulma.min.css            ← Bulma framework (25KB)
-│   ├── bulma-prefers-dark.min.css ← Dark mode support (optional)
-│   ├── frappe-gantt.css         ← Gantt chart styles (if adopted)
-│   └── app.css                  ← Minimal custom CSS
+│   ├── bulma.min.css              ← Bulmaフレームワーク（25KB）
+│   ├── bulma-prefers-dark.min.css ← ダークモード対応（オプション）
+│   ├── frappe-gantt.css           ← ガントチャートスタイル（採用時）
+│   └── app.css                    ← 最小限のカスタムCSS
 ├── js/
-│   ├── frappe-gantt.min.js      ← Gantt chart library (if adopted)
-│   ├── state.js                 ← State management & persistence
-│   ├── gantt.js                 ← Gantt chart integration
-│   ├── report.js                ← Report generation
-│   └── main.js                  ← Entry point
+│   ├── frappe-gantt.min.js        ← ガントチャートライブラリ（採用時）
+│   ├── state.js                   ← 状態管理・永続化
+│   ├── gantt.js                   ← ガントチャート連携
+│   ├── report.js                  ← 報告書生成
+│   └── main.js                    ← エントリーポイント
 ├── __tests__/
 │   ├── state.test.js
 │   ├── dateHelpers.test.js
 │   └── report.test.js
-├── package.json                 ← Jest configuration
-└── jest.config.js               ← Jest settings (if needed)
+├── package.json                   ← Jest設定
+└── jest.config.js                 ← Jest設定（必要に応じて）
 ```
 
-For the existing repo `gantt-chart-report`, adapt the above structure to what is already in place; do not break existing build/launch flow.
+既存リポジトリ `gantt-chart-report` については、上記構成を既存の構造に適応させ、既存のビルド・起動フローを壊さないこと。
 
 ---
 
-## 1. High-Level App Overview
+## 1. アプリ概要
 
-### 1.1 Purpose
+### 1.1 目的
 
-The app is a **Gantt chart–based progress management tool** that supports:
+本アプリは以下をサポートする**ガントチャートベースの進捗管理ツール**です：
 
-* Visual schedule management of projects and tasks via a Gantt chart.
-* Comfortable GUI operations:
+* ガントチャートによるプロジェクトとタスクの視覚的スケジュール管理
+* 快適なGUI操作：
+  * マウスによる直接操作（ドラッグ＆ドロップ、リサイズ）
+  * パワーユーザー向けの素早いキーボード操作
+* 以下の追跡：
+  * 通常のプロジェクトタスク
+  * アドホック/一回限りのタスク（一時タスク）
+* 以下に基づく**進捗報告文の自動生成**：
+  * タスクとその進捗
+  * 作業ログ
+  * 一時タスク
 
-  * Direct manipulation with mouse (drag & drop, resize).
-  * Quick keyboard operations for power users.
-* Tracking of:
+### 1.2 実行環境
 
-  * Regular project tasks.
-  * Ad-hoc / one-off tasks ("一時タスク").
-* **Automatic progress report generation** in text form, based on:
-
-  * Tasks and their progress.
-  * Work logs (作業ログ).
-  * Ad-hoc tasks.
-
-### 1.2 Execution Environment
-
-* Desktop browser, no server required.
-* Works offline: all data stored in **localStorage**.
-* The existing repo (`gantt-chart-report`) is the baseline. Extend/improve it rather than rewriting from scratch.
+* デスクトップブラウザ、サーバー不要
+* オフライン動作：すべてのデータは**localStorage**に保存
+* 既存リポジトリ（`gantt-chart-report`）がベースライン。ゼロから書き直すのではなく、拡張・改良する
 
 ---
 
-## 2. Data Model
+## 2. データモデル
 
-Use the following conceptual data structures. Implementation can be plain JS objects; TypeScript types are provided just as documentation.
+以下の概念的データ構造を使用します。実装はプレーンなJSオブジェクトで可能です。TypeScript型はドキュメント目的で記載しています。
 
 ```ts
 type ProjectStatus = 'planned' | 'active' | 'completed' | 'on_hold';
@@ -138,14 +133,14 @@ interface Task {
   id: string;
   projectId: string;
   name: string;
-  category?: string;      // phase/category
+  category?: string;      // フェーズ/カテゴリ
   assignee?: string;
   plannedStart: string;   // YYYY-MM-DD
   plannedEnd: string;     // YYYY-MM-DD
   progress: number;       // 0-100
   status: TaskStatus;
   priority?: TaskPriority;
-  dependsOn?: string[];   // task IDs
+  dependsOn?: string[];   // タスクID配列
   notes?: string;
 }
 
@@ -154,8 +149,8 @@ interface WorkLog {
   taskId: string;
   date: string;           // YYYY-MM-DD
   workNote: string;
-  hours?: number;         // hours worked
-  progressAfter?: number; // progress % after work
+  hours?: number;         // 作業時間
+  progressAfter?: number; // 作業後の進捗率
 }
 
 interface AdhocTask {
@@ -169,7 +164,7 @@ interface AdhocTask {
 
 interface UiPreferences {
   taskTableColumnWidths?: { [columnKey: string]: number };
-  ganttZoomLevel?: number; // integer zoom level
+  ganttZoomLevel?: number; // 整数のズームレベル
   theme?: 'dark' | 'light';
 }
 
@@ -182,28 +177,28 @@ interface AppState {
 }
 ```
 
-`AppState` as a whole is stored in localStorage.
+`AppState`全体をlocalStorageに保存します。
 
 ---
 
-## 3. Persistence (localStorage)
+## 3. 永続化（localStorage）
 
-### 3.1 Requirements
+### 3.1 要件
 
-* Use `localStorage` for persisting the entire `AppState`.
-* Use a single, stable key, e.g., `ganttProgressAppState`.
-* Provide robust load/save functions with error handling and simple migration hooks.
+* `AppState`全体の永続化に`localStorage`を使用
+* 単一の安定したキーを使用（例：`ganttProgressAppState`）
+* エラーハンドリングと簡単なマイグレーションフックを備えた堅牢なロード/セーブ関数を提供
 
-### 3.2 API (pure functions)
+### 3.2 API（純粋関数）
 
-Implement these utility functions (either in `state.js` or equivalent):
+以下のユーティリティ関数を実装（`state.js`または同等のファイル内）：
 
 ```js
 const STORAGE_KEY = 'ganttProgressAppState';
 
 /**
- * Load AppState from localStorage.
- * If not present or parse fails, return a valid initial state.
+ * localStorageからAppStateを読み込む。
+ * 存在しないかパースに失敗した場合、有効な初期状態を返す。
  */
 export function loadState() {
   try {
@@ -212,268 +207,252 @@ export function loadState() {
     const state = JSON.parse(json);
     return migrateStateIfNeeded(state);
   } catch (e) {
-    console.error('Failed to load state', e);
+    console.error('状態の読み込みに失敗', e);
     return getInitialState();
   }
 }
 
 /**
- * Save AppState to localStorage (stringified JSON).
+ * AppStateをlocalStorageに保存（JSON文字列化）。
  */
 export function saveState(state) {
   try {
     const json = JSON.stringify(state);
     localStorage.setItem(STORAGE_KEY, json);
-    // Optionally show some UI indicator like "auto saved".
+    // オプション：「自動保存済み」などのUIインジケーターを表示
   } catch (e) {
-    console.error('Failed to save state', e);
+    console.error('状態の保存に失敗', e);
   }
 }
 ```
 
-Additionally implement:
+追加で実装：
 
-* `getInitialState()` – returns an empty but valid `AppState`.
-* `migrateStateIfNeeded(state)` – if necessary, upgrade older state versions (can initially be a pass-through).
+* `getInitialState()` – 空だが有効な`AppState`を返す
+* `migrateStateIfNeeded(state)` – 必要に応じて古い状態バージョンをアップグレード（初期はパススルーで可）
 
-### 3.3 Auto-Save & Manual Save
+### 3.3 自動保存と手動保存
 
-* **Auto-save:** On relevant state changes (task edited, dates moved, etc.), save after a short debounce (e.g. 500–2000 ms).
-* **Manual save:** `Ctrl+S` triggers an explicit `saveState(currentState)` and shows a small toast "保存しました" or similar.
-
----
-
-## 4. GUI / UX Requirements
-
-### 4.1 Overall Layout (Desktop)
-
-Single-page layout using **Bulma components**:
-
-* **Top header** (`.navbar`)
-
-  * Project selection dropdown (`.select`).
-  * Date range selector (e.g., today / this week / this month).
-  * A small "Today's summary" area (number of tasks due today, delayed tasks, etc. – can be simple).
-  * Button: **"進捗報告文生成"** (`.button.is-primary`, opens report modal).
-
-* **Center: Two main panes (left & right)** (CSS Grid or `.columns`)
-
-  * **Left:** Task list table (`.table`).
-  * **Right:** Gantt chart (Frappe Gantt or custom).
-
-* **Bottom area:** Tabbed view (`.tabs`)
-
-  * Tabs: `作業ログ` | `一時タスク`.
-  * Each tab shows a table list for that category.
-
-* **Right side (or similar):**
-
-  * **Side panel** (`.card`) for selected task: details and progress update controls.
-
-* **Floating button (bottom-right):**
-
-  * `＋一時タスク` (`.button.is-primary.is-rounded`) – quick entry for ad-hoc tasks from any view.
-
-### 4.2 Bulma Components Mapping
-
-| UI Element | Bulma Component |
-|------------|-----------------|
-| Header/Navigation | `.navbar` |
-| Buttons | `.button`, `.button.is-primary`, `.button.is-danger`, etc. |
-| Form inputs | `.input`, `.select`, `.textarea` |
-| Tables | `.table.is-striped.is-hoverable` |
-| Cards | `.card`, `.card-header`, `.card-content`, `.card-footer` |
-| Modals | `.modal`, `.modal-card` |
-| Tabs | `.tabs`, `.tab-content` (custom) |
-| Notifications | `.notification.is-success`, `.notification.is-danger` |
-| Progress bar | `.progress.is-primary` |
-| Tags/Badges | `.tag.is-danger`, `.tag.is-warning`, `.tag.is-success` |
-| Dropdown | `.dropdown` |
-
-### 4.3 Common UX Rules
-
-* Prioritize **low click count**:
-
-  * Most edits should be reachable by double-click or single click + side panel.
-
-* **Keyboard support**:
-
-  * `Ctrl+S` – manual save.
-  * `N` – focus new task row.
-  * `Ctrl+F` – focus search/filter input.
-  * `Ctrl+Enter` – confirm in report modal.
-  * `Ctrl+Z / Ctrl+Y` – Undo / Redo for recent edits (at least 10–20 steps covering task creation, deletion, and date changes).
-
-* **IME Safety**:
-
-  * When IME composition is active (Japanese input), `Enter` must not trigger global shortcuts (closing modals, etc.).
-
-* Provide **visual feedback**:
-
-  * Hover states on buttons and rows.
-  * Selection highlight (clicked task row and its Gantt bar).
-  * Small auto-save indicator using Bulma `.notification` (e.g., "自動保存済み").
+* **自動保存**：関連する状態変更時（タスク編集、日付移動など）、短いデバウンス（例：500〜2000ms）後に保存
+* **手動保存**：`Ctrl+S`で明示的に`saveState(currentState)`を実行し、小さなトースト「保存しました」などを表示
 
 ---
 
-## 5. Task List Table (Left Pane)
+## 4. GUI / UX要件
 
-### 5.1 Columns
+### 4.1 全体レイアウト（デスクトップ）
 
-At minimum:
+**Bulmaコンポーネント**を使用したシングルページレイアウト：
 
-* Checkbox (row selection)
-* Task name
-* Assignee
-* Progress %
-* Start date
-* End date
-* Status (未着手 / 進行中 / 完了 / 保留) – use `.tag` with colors
-* Priority (高 / 中 / 低) – use `.tag.is-danger`, `.tag.is-warning`, `.tag.is-info`
+* **トップヘッダー**（`.navbar`）
+  * プロジェクト選択ドロップダウン（`.select`）
+  * 日付範囲セレクター（例：今日 / 今週 / 今月）
+  * 小さな「今日のサマリー」エリア（今日が期限のタスク数、遅延タスク数など）
+  * ボタン：**「進捗報告文生成」**（`.button.is-primary`、報告モーダルを開く）
 
-### 5.2 Behavior
+* **中央：2つのメインペイン（左右）**（CSSグリッドまたは`.columns`）
+  * **左**：タスクリストテーブル（`.table`）
+  * **右**：ガントチャート（Frappe Ganttまたはカスタム）
 
-* **Inline editing**:
+* **下部エリア**：タブビュー（`.tabs`）
+  * タブ：`作業ログ` | `一時タスク`
+  * 各タブはそのカテゴリのテーブルリストを表示
 
-  * Double-clicking a cell enters edit mode.
-  * Tab / Shift+Tab moves between editable cells.
-* **New task row**:
+* **右側（または類似位置）**：
+  * **サイドパネル**（`.card`）：選択タスクの詳細と進捗更新コントロール
 
-  * Keep a special bottom row like `+ 新規タスク`.
-  * Typing into it should create a new task.
-* **Sorting & filtering**:
+* **フローティングボタン（右下）**：
+  * `＋一時タスク`（`.button.is-primary.is-rounded`）– どの画面からでも一時タスクをクイック入力
 
-  * Clicking column headers toggles sorting.
-  * Simple header filters for Assignee and Status (e.g., small dropdowns).
-* **Row selection**:
+### 4.2 Bulmaコンポーネントマッピング
 
-  * Selecting a row highlights the corresponding bar in the Gantt chart.
-  * The selected task's details are shown in the side panel.
-* **Deletion**:
+| UI要素 | Bulmaコンポーネント |
+|--------|---------------------|
+| ヘッダー/ナビゲーション | `.navbar` |
+| ボタン | `.button`、`.button.is-primary`、`.button.is-danger`など |
+| フォーム入力 | `.input`、`.select`、`.textarea` |
+| テーブル | `.table.is-striped.is-hoverable` |
+| カード | `.card`、`.card-header`、`.card-content`、`.card-footer` |
+| モーダル | `.modal`、`.modal-card` |
+| タブ | `.tabs`、`.tab-content`（カスタム） |
+| 通知 | `.notification.is-success`、`.notification.is-danger` |
+| プログレスバー | `.progress.is-primary` |
+| タグ/バッジ | `.tag.is-danger`、`.tag.is-warning`、`.tag.is-success` |
+| ドロップダウン | `.dropdown` |
 
-  * `Delete` key or a row menu can delete the task.
+### 4.3 共通UXルール
+
+* **クリック数を最小限に**：
+  * ほとんどの編集はダブルクリックまたはシングルクリック＋サイドパネルで到達可能に
+
+* **キーボードサポート**：
+  * `Ctrl+S` – 手動保存
+  * `N` – 新規タスク行にフォーカス
+  * `Ctrl+F` – 検索/フィルター入力にフォーカス
+  * `Ctrl+Enter` – 報告モーダルで確定
+  * `Ctrl+Z / Ctrl+Y` – 直近の編集をUndo/Redo（タスク作成、削除、日付変更を含む最低10〜20ステップ）
+
+* **IME安全性**：
+  * IME変換中（日本語入力）は、`Enter`がグローバルショートカット（モーダルを閉じるなど）をトリガーしないこと
+
+* **視覚的フィードバック**：
+  * ボタンと行のホバー状態
+  * 選択ハイライト（クリックしたタスク行とそのガントバー）
+  * Bulmaの`.notification`を使用した小さな自動保存インジケーター（例：「自動保存済み」）
 
 ---
 
-## 6. Gantt Chart (Right Pane)
+## 5. タスクリストテーブル（左ペイン）
 
-The Gantt chart is central and must support **direct mouse manipulation** of task bars.
+### 5.1 カラム
 
-### 6.1 Basic Display
+最低限：
 
-* Vertical axis: tasks (aligned with the task table).
-* Horizontal axis: time in days.
-* Each task is drawn as a bar:
+* チェックボックス（行選択）
+* タスク名
+* 担当者
+* 進捗率
+* 開始日
+* 終了日
+* ステータス（未着手 / 進行中 / 完了 / 保留）– `.tag`と色を使用
+* 優先度（高 / 中 / 低）– `.tag.is-danger`、`.tag.is-warning`、`.tag.is-info`を使用
 
-  * Entire bar = planned duration (from `plannedStart` to `plannedEnd`).
-  * Internal fill = progress % (left-to-right fill proportion).
-* A vertical line indicates **today**.
-* Delayed tasks are visually distinctive (e.g., different color/border). A task is "delayed" when `plannedEnd < today` and `progress < 100`.
+### 5.2 動作
 
-### 6.2 Priority Color Coding
+* **インライン編集**：
+  * セルをダブルクリックで編集モードに入る
+  * Tab / Shift+Tabで編集可能セル間を移動
 
-Use Bulma color classes via `custom_class` (if using Frappe Gantt) or direct CSS:
+* **新規タスク行**：
+  * `+ 新規タスク`のような特別な最下行を保持
+  * 入力すると新しいタスクが作成される
 
-| Priority | Color Class | Visual |
-|----------|-------------|--------|
-| High (高) | `is-danger` / red | #F14668 |
-| Medium (中) | `is-warning` / yellow | #FFE08A |
-| Low (低) | `is-success` / green | #48C78E |
-| Delayed | `is-danger` + dashed border | Red with pattern |
+* **ソートとフィルター**：
+  * カラムヘッダーをクリックでソートを切り替え
+  * 担当者とステータス用の簡易ヘッダーフィルター（例：小さなドロップダウン）
 
-### 6.3 Mouse-Based Editing (Core Requirement)
+* **行選択**：
+  * 行を選択するとガントチャート内の対応するバーがハイライト
+  * 選択したタスクの詳細がサイドパネルに表示
 
-For each bar representing a task, implement **three kinds of mouse interactions**:
+* **削除**：
+  * `Delete`キーまたは行メニューでタスクを削除
 
-1. **Drag the entire bar horizontally** – shift start & end dates together.
-2. **Drag the left edge** – adjust only the start date.
-3. **Drag the right edge** – adjust only the end date.
+---
 
-Use a day-based snapping system based on pixel movements.
+## 6. ガントチャート（右ペイン）
 
-#### Shared rules
+ガントチャートは中心的な機能であり、タスクバーの**マウスによる直接操作**をサポートする必要があります。
 
-* Horizontal movement translates into integer day offsets:
+### 6.1 基本表示
+
+* 縦軸：タスク（タスクテーブルと揃える）
+* 横軸：日単位の時間
+* 各タスクはバーとして描画：
+  * バー全体 = 予定期間（`plannedStart`から`plannedEnd`まで）
+  * 内部の塗りつぶし = 進捗率（左から右への塗りつぶし割合）
+* 縦線で**今日**を示す
+* 遅延タスクは視覚的に区別（例：異なる色/ボーダー）。`plannedEnd < 今日` かつ `progress < 100` のタスクが「遅延」
+
+### 6.2 優先度による色分け
+
+Frappe Gantt使用時は`custom_class`経由、または直接CSSでBulmaの色クラスを使用：
+
+| 優先度 | 色クラス | 表示色 |
+|--------|----------|--------|
+| 高 | `is-danger` / 赤 | #F14668 |
+| 中 | `is-warning` / 黄 | #FFE08A |
+| 低 | `is-success` / 緑 | #48C78E |
+| 遅延 | `is-danger` + 破線ボーダー | パターン付き赤 |
+
+### 6.3 マウスベース編集（コア要件）
+
+タスクを表す各バーに対して、**3種類のマウスインタラクション**を実装：
+
+1. **バー全体を水平にドラッグ** – 開始日と終了日を同時に移動
+2. **左端をドラッグ** – 開始日のみ調整
+3. **右端をドラッグ** – 終了日のみ調整
+
+ピクセル移動に基づく日単位のスナッピングシステムを使用。
+
+#### 共通ルール
+
+* 水平移動を整数の日オフセットに変換：
 
   ```js
   const deltaX = currentMouseX - dragStartMouseX;
-  const deltaDays = Math.round(deltaX / dayWidth); // dayWidth: pixels per day
+  const deltaDays = Math.round(deltaX / dayWidth); // dayWidth: 1日あたりのピクセル数
   ```
 
-* While dragging, update the bar's position/width visually in real time.
+* ドラッグ中はバーの位置/幅をリアルタイムで視覚的に更新
 
-* On drag end (`mouseup` / `pointerup`):
+* ドラッグ終了時（`mouseup` / `pointerup`）：
+  * 最終的な`deltaDays`を新しい`plannedStart` / `plannedEnd`に変換
+  * 状態内の対応する`Task`オブジェクトを更新
+  * `saveState`で永続化（デバウンス付き）
+  * 関連UIを更新（テーブル、サイドパネルの日付など）
 
-  * Convert final `deltaDays` to new `plannedStart` / `plannedEnd`.
-  * Update the corresponding `Task` object in state.
-  * Persist via `saveState` (with debounce).
-  * Refresh any related UI (table, side panel dates, etc.).
+#### 6.3.1 バー全体のドラッグ（開始と終了を移動）
 
-#### 6.3.1 Entire Bar Drag (Shift Start & End)
+* バーの**中央エリア**（端以外）をクリック＆ドラッグで有効
+* 動作：
+  * 右にドラッグ：`plannedStart`と`plannedEnd`の両方が`deltaDays`分後ろに移動
+  * 左にドラッグ：両方が前に移動
 
-* Active when clicking and dragging **the middle area** of the bar (not the edges).
-* Behavior:
-
-  * Drag right: both `plannedStart` and `plannedEnd` move later by `deltaDays`.
-  * Drag left: both move earlier.
-
-Pseudo logic:
+疑似ロジック：
 
 ```js
-// On drag end
+// ドラッグ終了時
 const newStart = addDays(task.plannedStart, deltaDays);
 const newEnd   = addDays(task.plannedEnd, deltaDays);
 
 updateTaskDates(task.id, newStart, newEnd);
 ```
 
-* Optional constraints:
+* オプションの制約：
+  * 日付がグローバルな最小/最大タイムラインを超えないようにクランプ（存在する場合）
+  * 依存関係ロジックがある場合、基本的な制約に違反しないようにするか、少なくとも動作を文書化
 
-  * Clamp so dates do not exceed global min/max timeline (if any).
-  * If dependency logic exists, ensure not to violate basic constraints, or at least document behavior.
+#### 6.3.2 左端のドラッグ（開始日のみ変更）
 
-#### 6.3.2 Left Edge Drag (Change Start Only)
+* **左端**のリサイズハンドル（別のDOM要素または領域）で「resize-left」ドラッグを開始
+* 動作：
+  * 左にドラッグ：`plannedStart`が前に移動（期間が増加）
+  * 右にドラッグ：`plannedStart`が後ろに移動（期間が減少）
 
-* A resize handle on the **left edge** (can be a separate DOM element or region) starts a "resize-left" drag.
-* Behavior:
-
-  * Drag left: `plannedStart` moves earlier (duration increases).
-  * Drag right: `plannedStart` moves later (duration decreases).
-
-On drag end:
+ドラッグ終了時：
 
 ```js
 const newStart = addDays(task.plannedStart, deltaDays);
-// Ensure newStart <= plannedEnd
+// newStart <= plannedEnd を確保
 if (new Date(newStart) > new Date(task.plannedEnd)) {
-  // clamp to maintain at least 1 day duration, for example
-  // or just set newStart = plannedEnd
+  // 最低1日の期間を維持するようにクランプ
+  // または newStart = plannedEnd に設定
 }
 updateTaskDates(task.id, newStart, task.plannedEnd);
 ```
 
-#### 6.3.3 Right Edge Drag (Change End Only)
+#### 6.3.3 右端のドラッグ（終了日のみ変更）
 
-* A resize handle on the **right edge** starts a "resize-right" drag.
-* Behavior:
+* **右端**のリサイズハンドルで「resize-right」ドラッグを開始
+* 動作：
+  * 右にドラッグ：`plannedEnd`が後ろに移動（期間が増加）
+  * 左にドラッグ：`plannedEnd`が前に移動（期間が減少）
 
-  * Drag right: `plannedEnd` moves later (duration increases).
-  * Drag left: `plannedEnd` moves earlier (duration decreases).
-
-On drag end:
+ドラッグ終了時：
 
 ```js
 const newEnd = addDays(task.plannedEnd, deltaDays);
-// Ensure newEnd >= plannedStart
+// newEnd >= plannedStart を確保
 if (new Date(newEnd) < new Date(task.plannedStart)) {
-  // clamp to at least same as start, or 1 day duration
+  // 最低でも開始日と同じか、1日の期間にクランプ
 }
 updateTaskDates(task.id, task.plannedStart, newEnd);
 ```
 
-### 6.4 Implementation Details
+### 6.4 実装詳細
 
-* If using **Frappe Gantt**: leverage built-in drag/resize functionality with callbacks:
+* **Frappe Gantt**使用時：コールバック付きの内蔵ドラッグ/リサイズ機能を活用：
   ```js
   const gantt = new Gantt('#gantt', tasks, {
     on_click: (task) => showTaskDetail(task),
@@ -482,153 +461,145 @@ updateTaskDates(task.id, task.plannedStart, newEnd);
     view_mode: 'Day'
   });
   ```
-* If implementing custom: use HTML elements (divs) + absolute positioning, or SVG.
-* Each bar must be associated with the task ID (e.g., `data-task-id`).
-* Use `pointerdown` / `pointermove` / `pointerup` or traditional mouse events.
-* While IME is active for text fields, do not accidentally trigger drag logic.
+* カスタム実装の場合：HTML要素（div）＋絶対配置、またはSVGを使用
+* 各バーはタスクIDと関連付け（例：`data-task-id`）
+* `pointerdown` / `pointermove` / `pointerup`または従来のマウスイベント（`mousedown` / `mousemove` / `mouseup`）を使用
+* テキストフィールドでIMEがアクティブな間は、誤ってドラッグロジックをトリガーしないこと
 
 ---
 
-## 7. Side Panel – Task Detail & Progress Update
+## 7. サイドパネル – タスク詳細と進捗更新
 
-When a task is selected (from table or Gantt bar), display a side panel (`.card`) with:
+タスクが選択されたとき（テーブルまたはガントバーから）、サイドパネル（`.card`）を表示：
 
-* Task name (editable).
-* Project, assignee.
-* Planned start & end dates (editable; must stay in sync with Gantt changes).
-* Status (`.select`).
-* Progress controls:
+* タスク名（編集可能）
+* プロジェクト、担当者
+* 予定開始日・終了日（編集可能、ガントの変更と同期）
+* ステータス（`.select`）
+* 進捗コントロール：
+  * 0〜100のスライダー（`<input type="range">`）
+  * 正確な％のための数値入力
+* メモフィールド（`.textarea`）
+* 作業ログ入力：
+  * 今日の日付（デフォルト）
+  * 作業内容
+  * 時間
+  * ボタン：「今日の作業ログに追加」（`.button.is-primary`）– `WorkLog`エントリを作成
 
-  * Slider from 0–100 (`<input type="range">`).
-  * Numeric input for exact %.
-* Notes field (`.textarea`).
-* Work log entry:
-
-  * Today's date (default).
-  * Work description.
-  * Hours.
-  * Button: "今日の作業ログに追加" (`.button.is-primary`) – creates a `WorkLog` entry.
-
-All changes must update `AppState` and then `saveState`.
+すべての変更は`AppState`を更新し、`saveState`を実行すること。
 
 ---
 
-## 8. Bottom Tabs – Logs & Ad-hoc Tasks
+## 8. 下部タブ – ログと一時タスク
 
-Use Bulma `.tabs` component for tab navigation.
+タブナビゲーションにはBulmaの`.tabs`コンポーネントを使用。
 
-### 8.1 作業ログ (Work Logs)
+### 8.1 作業ログ
 
-* Table columns (`.table`):
+* テーブルカラム（`.table`）：
+  * 日付
+  * タスク名
+  * 作業メモ
+  * 時間
+  * 作業後の進捗率
 
-  * Date
-  * Task name
-  * Work note
-  * Hours
-  * Progress % after the work
-* Features:
+* 機能：
+  * 期間フィルター：今日 / 今週 / カスタム日付範囲
+  * 既存ログの編集/削除
 
-  * Period filter: today / this week / custom date range.
-  * Edit / delete existing logs.
+### 8.2 一時タスク
 
-### 8.2 一時タスク (Ad-hoc Tasks)
+* テーブルカラム：
+  * 日付
+  * タイトル
+  * 詳細メモ
+  * 時間
+  * 関連プロジェクト（オプション）
 
-* Table columns:
-
-  * Date
-  * Title
-  * Detail note
-  * Hours
-  * Related project (optional).
-* Features:
-
-  * Add/edit/delete.
-  * Quick-add via the floating `＋一時タスク` button (opens a `.modal`):
-
-    * Date (default to today).
-    * Title.
-    * Hours.
-    * Detail.
-    * Save.
+* 機能：
+  * 追加/編集/削除
+  * フローティング`＋一時タスク`ボタンでクイック追加（`.modal`を開く）：
+    * 日付（デフォルトは今日）
+    * タイトル
+    * 時間
+    * 詳細
+    * 保存
 
 ---
 
-## 9. Progress Report Generation
+## 9. 進捗報告文生成
 
-Provide a **modal** dialog (`.modal.modal-card`) invoked from the main header button "進捗報告文生成".
+メインヘッダーの「進捗報告文生成」ボタンから呼び出す**モーダル**ダイアログ（`.modal.modal-card`）を提供。
 
-### 9.1 Modal Options
+### 9.1 モーダルオプション
 
-* Period selection:
+* 期間選択：
+  * 今日
+  * 今週
+  * カスタム日付範囲（開始/終了）
 
-  * Today.
-  * This week.
-  * Custom date range (from/to).
-* Target projects:
+* 対象プロジェクト：
+  * プロジェクトの複数選択リスト
 
-  * Multi-select list of projects.
-* Option:
+* オプション：
+  * 一時タスクを含める？（チェックボックス）
 
-  * Include ad-hoc tasks? (checkbox).
+### 9.2 報告内容構造
 
-### 9.2 Report Content Structure
-
-Implement a pure function to generate the report text:
+報告テキストを生成する純粋関数を実装：
 
 ```js
 export function generateReport(appState, options) {
   // options: { from: string, to: string, projectIds?: string[], includeAdhoc?: boolean }
-  // returns string
+  // 文字列を返す
 }
 ```
 
-The resulting text should follow a structure like:
+生成されるテキストは以下の構造に従う：
 
-1. **Overview**
+1. **概要**
+   * 例：「○月○日（〜○月○日）の進捗報告です。」
 
-   * e.g. "○月○日（〜○月○日）の進捗報告です。"
-2. **Completed tasks**
+2. **完了タスク**
+   * `status === 'completed'`で期間内に完了したタスクのリスト
 
-   * List of tasks with `status === 'completed'` and completed within the period.
-3. **In-progress tasks**
+3. **進行中タスク**
+   * `status === 'in_progress'`のタスク。進捗率と短い説明（直近のログがあれば）を含む
 
-   * Tasks with `status === 'in_progress'`, including progress % and short description (from recent logs if available).
-4. **Delayed / at-risk tasks**
+4. **遅延/リスクありタスク**
+   * `plannedEnd < to` かつ `progress < 100` のタスク。理由/メモがあれば表示
 
-   * Tasks for which `plannedEnd < to` and `progress < 100`. Show reason/notes if available.
-5. **Ad-hoc / other tasks** (if `includeAdhoc` is true)
+5. **一時タスク/その他**（`includeAdhoc`がtrueの場合）
+   * 一時タスクのサマリーと時間
 
-   * Summaries of ad-hoc tasks and their hours.
-6. **Plans until next report**
+6. **次回報告までの予定**
+   * 進行中タスクに基づく簡単な予測（例：「タスクXの実装完了〜単体テスト着手」）– ヒューリスティック/シンプルで可
 
-   * Simple forecast based on in-progress tasks (e.g., "タスクXの実装完了〜単体テスト着手") – this can be heuristic/simple.
+### 9.3 モーダルUI
 
-### 9.3 Modal UI
-
-* Show a large textarea containing the generated report.
-* Buttons:
-
-  * Generate / Regenerate (`.button.is-primary`).
-  * Copy to clipboard (`.button.is-success`).
-  * Close (`.button`).
-* Optional: auto-select and auto-copy after generation, with a small toast notification (`.notification`).
+* 生成された報告を含む大きなテキストエリアを表示
+* ボタン：
+  * 生成/再生成（`.button.is-primary`）
+  * クリップボードにコピー（`.button.is-success`）
+  * 閉じる（`.button`）
+* オプション：生成後に自動選択・自動コピーし、小さなトースト通知（`.notification`）を表示
 
 ---
 
-## 10. Testing Requirements (Jest)
+## 10. テスト要件（Jest）
 
-Set up **Jest** for unit testing of the non-DOM logic.
+非DOMロジックのユニットテスト用に**Jest**をセットアップ。
 
-### 10.1 Environment Setup
+### 10.1 環境セットアップ
 
-1. Initialize Node project and install Jest:
+1. Nodeプロジェクトを初期化しJestをインストール：
 
 ```bash
 npm init -y
 npm install --save-dev jest
 ```
 
-2. In `package.json`, add:
+2. `package.json`に追加：
 
 ```json
 "scripts": {
@@ -636,106 +607,96 @@ npm install --save-dev jest
 }
 ```
 
-3. If necessary, add a Jest config file so tests can import ES modules or use CommonJS consistently.
+3. 必要に応じてJest設定ファイルを追加し、テストがESモジュールをインポートできるか、CommonJSを一貫して使用できるようにする。
 
-### 10.2 Test Targets
+### 10.2 テスト対象
 
-Write tests for at least these functions (and any helpers they need):
+最低限以下の関数（および必要なヘルパー）のテストを作成：
 
 * `saveState(state)` / `loadState()`
-* Date/time helpers:
-
+* 日付/時刻ヘルパー：
   * `addDays(dateStr, n)`
   * `getTasksInPeriod(tasks, from, to)`
   * `getDelayedTasks(tasks, today)`
-* Report generation:
-
+* 報告生成：
   * `generateReport(appState, options)`
 
-Place test files under `__tests__/`, e.g.:
+テストファイルは`__tests__/`配下に配置：
 
 * `__tests__/state.test.js`
 * `__tests__/dateHelpers.test.js`
 * `__tests__/report.test.js`
 
-### 10.3 Example Test Cases
+### 10.3 テストケース例
 
 1. **saveState/loadState**
+   * `AppState`を保存後に読み込むと、同じ構造/値のオブジェクトが返る
+   * localStorageにデータがない場合、`loadState()`は`getInitialState()`を返す
 
-   * Saving an `AppState` then loading it returns an object with the same structure/values.
-   * When no data in localStorage, `loadState()` returns `getInitialState()`.
+2. **遅延タスク**
+   * `plannedEnd < today` かつ `progress < 100` のタスクは`getDelayedTasks()`に含まれる
+   * `plannedEnd === today` または `progress === 100` のタスクは遅延とみなされない
 
-2. **Delayed tasks**
+3. **期間フィルター**
+   * `getTasksInPeriod()`は日付範囲が指定期間と交差するタスクを返す
+   * 境界条件：`from`で開始または`to`で終了するタスクは含まれる
 
-   * For tasks where `plannedEnd < today` and `progress < 100`, `getDelayedTasks()` includes them.
-   * Tasks with `plannedEnd === today` or `progress === 100` are not considered delayed.
+4. **報告生成**
+   * 完了タスクは「完了」セクションに表示
+   * 進行中タスクは進捗率とともに表示
+   * 遅延タスクは「遅延」セクションに表示
+   * 一時タスクは`options.includeAdhoc`がtrueの場合のみ表示
 
-3. **Period filter**
-
-   * `getTasksInPeriod()` returns tasks whose date ranges intersect the given period.
-   * Boundary conditions: tasks starting exactly at `from` or ending exactly at `to` are included.
-
-4. **Report generation**
-
-   * Completed tasks appear in the "completed" section.
-   * In-progress tasks appear with their progress %.
-   * Delayed tasks appear in the "delayed" section.
-   * Ad-hoc tasks appear only when `options.includeAdhoc` is `true`.
-
-Run `npm test` and ensure all tests pass.
+`npm test`を実行し、すべてのテストがパスすることを確認。
 
 ---
 
-## 11. Integration with Existing Repo
+## 11. 既存リポジトリとの統合
 
-All of the above requirements must be applied **within** the existing project structure of:
+上記すべての要件は、以下の既存プロジェクト構造**内で**適用する必要があります：
 
 * `https://github.com/suimintoreyo/gantt-chart-report.git`
 
-Instructions:
+手順：
 
-1. Clone the repo and identify the main entry point and Gantt implementation.
-2. Integrate or refactor code to conform to:
-
-   * The data model and persistence layer.
-   * Direct manipulation (dragging/resizing) of Gantt task bars.
-   * Progress reporting.
-3. Keep or improve any existing features, without breaking the current basic behavior. If there are existing data structures that differ, either:
-
-   * Add thin adapters to map them to the `AppState`-style structures above, or
-   * Refactor in a way that is localized and well-commented.
+1. リポジトリをクローンし、メインエントリーポイントとガント実装を特定
+2. 以下に準拠するようコードを統合またはリファクタリング：
+   * データモデルと永続化レイヤー
+   * ガントタスクバーの直接操作（ドラッグ/リサイズ）
+   * 進捗報告
+3. 既存機能を維持または改善し、現在の基本動作を壊さない。既存のデータ構造が異なる場合：
+   * 上記の`AppState`スタイル構造にマッピングする薄いアダプターを追加、または
+   * ローカライズされ、コメントが付けられた方法でリファクタリング
 
 ---
 
-## 12. Deliverables
+## 12. 成果物
 
-Codex should produce and/or update the following:
+以下を作成または更新すること：
 
-* Application source code (HTML/CSS/JS) satisfying the functional and UX requirements.
-* Gantt chart implementation with direct mouse-based editing:
+* 機能およびUX要件を満たすアプリケーションソースコード（HTML/CSS/JS）
+* マウスベース編集を備えたガントチャート実装：
+  * バーをドラッグして移動
+  * 左端をドラッグして開始日を変更
+  * 右端をドラッグして終了日を変更
+  * 基礎となる日付と期間が更新、保存され、すべてのビューに反映
+* `loadState` / `saveState`ユーティリティによるlocalStorageでの`AppState`永続化
+* 進捗報告生成関数とモーダル
+* テストセットアップ（`package.json`、Jest設定）と`__tests__/`配下のテストファイル：
+  * 状態永続化
+  * 日付ヘルパーロジック
+  * 報告生成
+* メインモジュールとドラッグロジックの実装方法を説明する短いメモまたはコード内コメント
 
-  * Drag bar to move.
-  * Drag left edge to change start.
-  * Drag right edge to change end.
-  * Underlying dates and durations are updated, saved, and reflected in all views.
-* `AppState` persistence via localStorage with `loadState` / `saveState` utilities.
-* Progress report generation function and modal.
-* Test setup (`package.json`, Jest config) and test files under `__tests__/` that cover:
-
-  * State persistence.
-  * Date helper logic.
-  * Report generation.
-* A short note or comments in code explaining the main modules and how drag logic is implemented.
-
-Once these requirements are met, running the app in a browser and `npm test` in the project root should both succeed without errors.
+これらの要件が満たされたら、ブラウザでアプリを実行し、プロジェクトルートで`npm test`を実行して、両方ともエラーなく成功すること。
 
 ---
 
-## 13. Pending / Undecided Items
+## 13. 未決定・保留事項
 
-| Item | Status | Notes |
-|------|--------|-------|
-| Frappe Gantt adoption | **Pending (High Priority)** | Final decision after evaluation |
-| Dark mode implementation | Undecided | `bulma-prefers-dark.css` or custom CSS variables |
-| Dependency arrows display | Under consideration | Frappe Gantt supports this |
-| Mobile/responsive support | Out of scope | Desktop-first, may consider later |
+| 項目 | ステータス | 備考 |
+|------|------------|------|
+| Frappe Gantt採用 | **保留（優先度高）** | 評価後に最終決定 |
+| ダークモード実装 | 未決定 | `bulma-prefers-dark.css`またはカスタムCSS変数 |
+| 依存関係の矢印表示 | 検討中 | Frappe Ganttは対応可能 |
+| モバイル/レスポンシブ対応 | スコープ外 | デスクトップ優先、後で検討の可能性あり |
