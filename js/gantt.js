@@ -8,6 +8,12 @@ import { formatDate } from './dateHelpers.js';
 let ganttInstance = null;
 let onTaskUpdate = null;
 let onTaskClick = null;
+const STATUS_LABELS = {
+  not_started: '未着手',
+  in_progress: '進行中',
+  completed: '完了',
+  on_hold: '保留',
+};
 
 /**
  * ガントチャートを初期化
@@ -47,9 +53,11 @@ export function initGantt(selector, tasks, callbacks = {}) {
       }
     },
     custom_popup_html: (task) => {
+      const statusLabel = STATUS_LABELS[task.status] || task.status || '-';
       return `
         <div class="gantt-popup">
           <h4>${task.name}</h4>
+          <p>ステータス: ${statusLabel}</p>
           <p>進捗: ${task.progress}%</p>
           <p>${formatDate(task._start)} 〜 ${formatDate(task._end)}</p>
         </div>
@@ -64,21 +72,24 @@ export function initGantt(selector, tasks, callbacks = {}) {
  * AppStateのTaskをFrappe Gantt形式に変換
  */
 function taskToGanttFormat(task) {
-  let customClass = '';
+  const classes = [];
 
   // 優先度による色分け
   if (task.priority === 'high') {
-    customClass = 'gantt-bar-high';
+    classes.push('gantt-bar-high');
   } else if (task.priority === 'medium') {
-    customClass = 'gantt-bar-medium';
+    classes.push('gantt-bar-medium');
   } else if (task.priority === 'low') {
-    customClass = 'gantt-bar-low';
+    classes.push('gantt-bar-low');
   }
+
+  const statusClass = getStatusClass(task.status);
+  if (statusClass) classes.push(statusClass);
 
   // 遅延チェック
   const today = formatDate(new Date());
   if (task.plannedEnd < today && task.progress < 100) {
-    customClass += ' gantt-bar-delayed';
+    classes.push('gantt-bar-delayed');
   }
 
   return {
@@ -87,7 +98,7 @@ function taskToGanttFormat(task) {
     start: task.plannedStart,
     end: task.plannedEnd,
     progress: task.progress || 0,
-    custom_class: customClass.trim(),
+    custom_class: classes.join(' ').trim(),
     dependencies: task.dependsOn ? task.dependsOn.join(',') : '',
   };
 }
@@ -132,4 +143,14 @@ export function highlightTask(taskId) {
  */
 export function getGanttInstance() {
   return ganttInstance;
+}
+
+function getStatusClass(status) {
+  const map = {
+    not_started: 'gantt-status-not-started',
+    in_progress: 'gantt-status-in-progress',
+    completed: 'gantt-status-completed',
+    on_hold: 'gantt-status-on-hold',
+  };
+  return map[status] || '';
 }

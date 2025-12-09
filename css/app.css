@@ -28,16 +28,6 @@
   stroke-width: 3px !important;
 }
 
-/* テーブル選択行 */
-#task-table-body tr.is-selected {
-  background-color: rgba(50, 115, 220, 0.2);
-}
-
-#task-table-body tr:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  cursor: pointer;
-}
-
 /* 進捗テキスト */
 .progress-text {
   font-size: 0.75rem;
@@ -64,32 +54,28 @@
   z-index: 100;
 }
 
-/* ズームボタン */
-.btn-zoom.is-active {
-  background-color: #3273dc;
-  color: white;
-}
-
 /* ガントコンテナ */
-#gantt-container {
+.gantt-surface {
   min-height: 200px;
   overflow-x: auto;
-  background-color: #1f1f1f;
+  background: #16181f;
+  border: 1px solid #1f2430;
+  border-radius: 6px;
 }
 
-#gantt-container svg {
+.gantt-surface svg {
   width: 100%;
 }
 
 .gantt .grid-background,
 .gantt .grid-header,
 .gantt .grid-row {
-  fill: #1f1f1f;
+  fill: #16181f;
 }
 
 .gantt .grid-row:not(:last-of-type) .row-line,
 .gantt .grid-header .tick line {
-  stroke: #2f2f2f;
+  stroke: #2a3140;
 }
 
 .gantt .grid-header .tick text,
@@ -99,15 +85,53 @@
 }
 
 .gantt .today-highlight {
-  fill: rgba(50, 115, 220, 0.12);
+  fill: rgba(76, 130, 255, 0.12);
+}
+
+.gantt .bar {
+  rx: 4px;
+  ry: 4px;
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 1px;
+}
+
+.gantt .bar-progress {
+  fill-opacity: 0.9;
+}
+
+.gantt .bar-label {
+  fill: #f5f5f5;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.gantt-status-not-started .bar {
+  stroke: #7a7a7a;
+  stroke-dasharray: 3 2;
+}
+
+.gantt-status-in-progress .bar {
+  stroke: #3298dc;
+}
+
+.gantt-status-completed .bar {
+  stroke: #48c774;
+  stroke-width: 2px;
+  opacity: 0.75;
+}
+
+.gantt-status-on-hold .bar {
+  stroke: #ffdd57;
+  stroke-dasharray: 4 2;
 }
 
 /* ガントポップアップ */
 .gantt-popup {
   padding: 0.5rem;
-  background-color: #222;
+  background-color: #111520;
   color: #f5f5f5;
-  border: 1px solid #2f2f2f;
+  border: 1px solid #1f2430;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
 }
 
 .gantt-popup h4 {

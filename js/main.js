@@ -60,9 +60,8 @@ function setupEventListeners() {
   $$('.btn-zoom').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const mode = e.target.dataset.mode;
-      $$('.btn-zoom').forEach(b => b.classList.remove('is-active'));
-      e.target.classList.add('is-active');
       changeViewMode(mode);
+      setActiveZoom(mode);
       appState.uiPreferences.ganttZoomLevel = mode;
       saveStateDebounced(appState);
     });
@@ -298,9 +297,7 @@ function renderGantt() {
     // 初期ズームレベルを設定
     const zoomLevel = appState.uiPreferences.ganttZoomLevel || 'Day';
     changeViewMode(zoomLevel);
-    $$('.btn-zoom').forEach(btn => {
-      btn.classList.toggle('is-active', btn.dataset.mode === zoomLevel);
-    });
+    setActiveZoom(zoomLevel);
   }
 }
 
@@ -966,3 +963,11 @@ $('#task-search')?.addEventListener('input', () => {
 
 // アプリ起動
 document.addEventListener('DOMContentLoaded', init);
+
+function setActiveZoom(mode) {
+  $$('.btn-zoom').forEach(btn => {
+    const isActive = btn.dataset.mode === mode;
+    btn.classList.toggle('is-primary', isActive);
+    btn.classList.toggle('is-light', !isActive);
+  });
+}
