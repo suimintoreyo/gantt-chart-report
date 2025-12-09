@@ -42,6 +42,7 @@
 
 ### 0.3 運用・安全
 - Git/CI
+  - 作業は `dev` 配下のトピックブランチで行い、`main` へ直接 push しない
   - main は強制 push 禁止 + PR で最低 1 名レビュー必須
   - dev は定期的に rebase/merge して差分を小さく保つ
   - PR/Issue は CLI ツール（例: gh, glab）利用可
