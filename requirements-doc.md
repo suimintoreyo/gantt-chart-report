@@ -20,72 +20,38 @@
 * テスト可能なロジックには**Node + Jest**環境を構築
 * **ランタイムでのnpm/ビルドツール不使用**：すべてのCSS/JSライブラリはオフライン使用のためローカルに保存
 
-### 0.1 CSSフレームワーク：Bulma
+### 0.1 採用ライブラリ
 
-* **採用フレームワーク**：Bulma（v0.9.x または最新安定版）
-* **採用理由**：
-  - 豊富な色バリエーション（`is-primary`、`is-danger`、`is-success`、`is-warning`、`is-info`）
-  - 内蔵コンポーネント：タブ、モーダル、通知、カード、ナビバー
-  - カスタムCSSが最小限で済む
-  - JavaScript依存なし（純粋なCSS）
-  - オフライン対応可能（ローカルファイル保存）
-* **ファイルサイズ**：約25KB（minified + gzip）
-* **ダークモード**：**常時ダークモード**
-  - `bulma-prefers-dark.css`を使用
-  - OS設定に関係なく、アプリは常にダークモードで表示
-  - ライト/ダークの切り替え機能は実装しない
-  - 配置：`css/bulma-prefers-dark.min.css`
+| ライブラリ | 用途 | サイズ | 配置先 |
+|-----------|------|--------|--------|
+| Bulma (v0.9.x+) | CSSフレームワーク | ~25KB | `css/bulma.min.css` |
+| bulma-prefers-dark | 常時ダークモード | ~5KB | `css/bulma-prefers-dark.min.css` |
+| Frappe Gantt | ガントチャート | ~40KB | `js/frappe-gantt.min.js`, `css/frappe-gantt.css` |
 
-### 0.2 ガントチャートライブラリ：Frappe Gantt
+**Bulma採用理由**: 豊富な色クラス（`is-primary`/`is-danger`等）、JS不要、コンポーネント充実
+**Frappe Gantt採用理由**: ドラッグ＆リサイズ内蔵、進捗表示、カスタムクラス対応（実装詳細は6.5参照）
 
-* **採用ライブラリ**：Frappe Gantt（最新安定版）
-* **採用理由**：
-  - ドラッグ＆ドロップ内蔵（バー全体の移動）
-  - リサイズ内蔵（左右端のドラッグ）
-  - 進捗表示内蔵
-  - 今日の線（トゥデイライン）内蔵
-  - カスタムクラス対応（優先度による色分け）
-  - 軽量（約40KB）
-  - MITライセンス
-  - オフライン対応可能（ローカルファイル配置）
-* **ファイルサイズ**：約40KB（minified）
-* **配置**：`js/frappe-gantt.min.js`、`css/frappe-gantt.css`
+### 0.2 カスタムCSS方針
 
-### 0.3 カスタムCSS方針
+* カスタムCSSは最小限（目標20〜30行以下）
+* Bulma内蔵クラスを最大限活用
+* カスタムが必要な箇所：レイアウト調整、遅延タスク表示
 
-* **目標**：カスタムCSSを最小限に（目標：20〜30行以下）
-* Bulmaの内蔵クラスを最大限活用
-* 優先度の色分け：`is-danger`、`is-warning`、`is-success`、`is-info`を再利用
-* カスタムスタイルが必要な箇所：
-  - レイアウト調整（グリッド設定）
-  - ガントチャート統合スタイル
-  - 遅延タスクの視覚的インジケーター
-
-### 想定ファイル構成（新規または更新）
+### 想定ファイル構成
 
 ```
 project/
 ├── index.html
 ├── css/
-│   ├── bulma.min.css              ← Bulmaフレームワーク（25KB）
-│   ├── bulma-prefers-dark.min.css ← ダークモード対応（オプション）
-│   ├── frappe-gantt.css           ← ガントチャートスタイル（採用時）
-│   └── app.css                    ← 最小限のカスタムCSS
+│   ├── bulma.min.css, bulma-prefers-dark.min.css, frappe-gantt.css
+│   └── app.css
 ├── js/
-│   ├── frappe-gantt.min.js        ← ガントチャートライブラリ（採用時）
-│   ├── state.js                   ← 状態管理・永続化
-│   ├── gantt.js                   ← ガントチャート連携
-│   ├── report.js                  ← 報告書生成
-│   └── main.js                    ← エントリーポイント
+│   ├── frappe-gantt.min.js
+│   ├── state.js, gantt.js, report.js, main.js
 ├── __tests__/
-│   ├── state.test.js
-│   ├── dateHelpers.test.js
-│   └── report.test.js
-├── package.json                   ← Jest設定
-└── jest.config.js                 ← Jest設定（必要に応じて）
+│   └── state.test.js, dateHelpers.test.js, report.test.js
+└── package.json, jest.config.js
 ```
-
-既存リポジトリ `gantt-chart-report` については、上記構成を既存の構造に適応させ、既存のビルド・起動フローを壊さないこと。
 
 ---
 
@@ -316,23 +282,7 @@ export function saveState(state) {
   * 開始日・終了日
   * ステータス（計画中/進行中/完了/保留）
 
-### 4.3 Bulmaコンポーネントマッピング
-
-| UI要素 | Bulmaコンポーネント |
-|--------|---------------------|
-| ヘッダー/ナビゲーション | `.navbar` |
-| ボタン | `.button`、`.button.is-primary`、`.button.is-danger`など |
-| フォーム入力 | `.input`、`.select`、`.textarea` |
-| テーブル | `.table.is-striped.is-hoverable` |
-| カード | `.card`、`.card-header`、`.card-content`、`.card-footer` |
-| モーダル | `.modal`、`.modal-card` |
-| タブ | `.tabs`、`.tab-content`（カスタム） |
-| 通知 | `.notification.is-success`、`.notification.is-danger` |
-| プログレスバー | `.progress.is-primary` |
-| タグ/バッジ | `.tag.is-danger`、`.tag.is-warning`、`.tag.is-success` |
-| ドロップダウン | `.dropdown` |
-
-### 4.4 共通UXルール
+### 4.3 共通UXルール
 
 * **クリック数を最小限に**：
   * ほとんどの編集はダブルクリックまたはシングルクリック＋サイドパネルで到達可能に
@@ -472,88 +422,38 @@ Frappe Gantt使用時は`custom_class`経由、または直接CSSでBulmaの色�
 
 ### 6.4 マウスベース編集（コア要件）
 
-タスクを表す各バーに対して、**3種類のマウスインタラクション**を実装：
+タスクバーに対して**3種類のマウス操作**を実装：
 
-1. **バー全体を水平にドラッグ** – 開始日と終了日を同時に移動
-2. **左端をドラッグ** – 開始日のみ調整
-3. **右端をドラッグ** – 終了日のみ調整
+| 操作 | トリガー | 動作 |
+|------|----------|------|
+| 移動 | バー中央をドラッグ | 開始日・終了日を同時に移動 |
+| 開始日変更 | 左端をドラッグ | 開始日のみ調整（期間が伸縮） |
+| 終了日変更 | 右端をドラッグ | 終了日のみ調整（期間が伸縮） |
 
-ピクセル移動に基づく日単位のスナッピングシステムを使用。
-
-#### 共通ルール
-
-* 水平移動を整数の日オフセットに変換：
-
-  ```js
-  const deltaX = currentMouseX - dragStartMouseX;
-  const deltaDays = Math.round(deltaX / dayWidth); // dayWidth: 1日あたりのピクセル数
-  ```
-
-* ドラッグ中はバーの位置/幅をリアルタイムで視覚的に更新
-
-* ドラッグ終了時（`mouseup` / `pointerup`）：
-  * 最終的な`deltaDays`を新しい`plannedStart` / `plannedEnd`に変換
-  * 状態内の対応する`Task`オブジェクトを更新
-  * `saveState`で永続化（デバウンス付き）
-  * 関連UIを更新（テーブル、サイドパネルの日付など）
-
-#### 6.4.1 バー全体のドラッグ（開始と終了を移動）
-
-* バーの**中央エリア**（端以外）をクリック＆ドラッグで有効
-* 動作：
-  * 右にドラッグ：`plannedStart`と`plannedEnd`の両方が`deltaDays`分後ろに移動
-  * 左にドラッグ：両方が前に移動
-
-疑似ロジック：
+#### 共通処理
 
 ```js
-// ドラッグ終了時
-const newStart = addDays(task.plannedStart, deltaDays);
-const newEnd   = addDays(task.plannedEnd, deltaDays);
+// ピクセル→日数変換
+const deltaDays = Math.round((currentMouseX - dragStartMouseX) / dayWidth);
 
-updateTaskDates(task.id, newStart, newEnd);
-```
+// ドラッグ終了時の更新処理
+function onDragEnd(task, dragType, deltaDays) {
+  let newStart = task.plannedStart, newEnd = task.plannedEnd;
 
-* オプションの制約：
-  * 日付がグローバルな最小/最大タイムラインを超えないようにクランプ（存在する場合）
-  * 依存関係ロジックがある場合、基本的な制約に違反しないようにするか、少なくとも動作を文書化
+  if (dragType === 'move')       { newStart = addDays(newStart, deltaDays); newEnd = addDays(newEnd, deltaDays); }
+  if (dragType === 'resize-left')  newStart = addDays(newStart, deltaDays);
+  if (dragType === 'resize-right') newEnd = addDays(newEnd, deltaDays);
 
-#### 6.4.2 左端のドラッグ（開始日のみ変更）
+  // 開始日 <= 終了日 を保証
+  if (new Date(newStart) > new Date(newEnd)) newStart = newEnd;
 
-* **左端**のリサイズハンドル（別のDOM要素または領域）で「resize-left」ドラッグを開始
-* 動作：
-  * 左にドラッグ：`plannedStart`が前に移動（期間が増加）
-  * 右にドラッグ：`plannedStart`が後ろに移動（期間が減少）
-
-ドラッグ終了時：
-
-```js
-const newStart = addDays(task.plannedStart, deltaDays);
-// newStart <= plannedEnd を確保
-if (new Date(newStart) > new Date(task.plannedEnd)) {
-  // 最低1日の期間を維持するようにクランプ
-  // または newStart = plannedEnd に設定
+  updateTaskDates(task.id, newStart, newEnd);
+  saveState(currentState); // デバウンス付き
 }
-updateTaskDates(task.id, newStart, task.plannedEnd);
 ```
 
-#### 6.4.3 右端のドラッグ（終了日のみ変更）
-
-* **右端**のリサイズハンドルで「resize-right」ドラッグを開始
-* 動作：
-  * 右にドラッグ：`plannedEnd`が後ろに移動（期間が増加）
-  * 左にドラッグ：`plannedEnd`が前に移動（期間が減少）
-
-ドラッグ終了時：
-
-```js
-const newEnd = addDays(task.plannedEnd, deltaDays);
-// newEnd >= plannedStart を確保
-if (new Date(newEnd) < new Date(task.plannedStart)) {
-  // 最低でも開始日と同じか、1日の期間にクランプ
-}
-updateTaskDates(task.id, task.plannedStart, newEnd);
-```
+* ドラッグ中はバー位置をリアルタイム更新
+* イベント: `pointerdown` / `pointermove` / `pointerup`
 
 ### 6.5 実装詳細
 
@@ -797,15 +697,13 @@ npm install --save-dev jest
 
 ---
 
-## 13. 未決定・保留事項
+## 13. スコープ外事項
 
-| 項目 | ステータス | 備考 |
-|------|------------|------|
-| Frappe Gantt採用 | **採用決定** | ドラッグ＆ドロップ、リサイズ、進捗表示を内蔵 |
-| ダークモード実装 | **採用決定** | 常時ダークモード（`bulma-prefers-dark.css`使用） |
-| 依存関係（dependsOn）UI | スコープ外 | データモデルは残すが、表示・編集は初期実装から除外。将来拡張可能 |
-| モバイル/レスポンシブ対応 | スコープ外 | デスクトップ優先、後で検討の可能性あり |
-| エクスポート/インポート機能 | スコープ外 | localStorageのみで対応、将来検討の可能性あり |
-| 印刷対応 | スコープ外 | 印刷用CSSは初期実装から除外 |
-| 初期データ/サンプルデータ | スコープ外 | 空の状態で開始、チュートリアルなし |
-| ファビコン | スコープ外 | デフォルトのブラウザアイコンを使用 |
+以下は初期実装から除外（将来拡張として検討可能）：
+
+* 依存関係UI（データモデルは保持）
+* モバイル/レスポンシブ対応
+* エクスポート/インポート機能
+* 印刷対応
+* サンプルデータ/チュートリアル
+* ファビコン
