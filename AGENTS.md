@@ -27,7 +27,7 @@
 
 ## 2. 技術スタック
 
-- フレームワーク: Next.js (App Router, TypeScript, `src/app` 構成)
+- フレームワーク: Next.js (App Router, TypeScript。`src/` なしの `app/` 直下構成)
 - スタイリング:
   - Tailwind CSS
   - shadcn（shadcn/ui、CLI は `shadcn@latest`、Style: New York、Base color: Neutral。`components/ui` に主要コンポーネント一式を生成済み）
@@ -65,7 +65,7 @@
 
 ### 4.1 Next.js プロジェクト構成の整備
 
-- App Router 前提 (`src/app`) でページとレイアウトを実装すること
+ - App Router 前提（`app/` 直下構成）でページとレイアウトを実装すること
 - Tailwind + shadcn（Neutral ベースカラー） + next-themes を前提にした UI 実装
 - 以下の URL 構成をベースにしたページファイルの作成:
 
@@ -127,8 +127,8 @@
 - 型定義はできる限り明示的に行うこと
 - React コンポーネントは関数コンポーネント + Hooks を使用
 - Next.js App Router の慣習に従うこと
-  - ページコンポーネントは `src/app/.../page.tsx`
-  - レイアウトは `src/app/.../layout.tsx`
+  - ページコンポーネントは `app/.../page.tsx`
+  - レイアウトは `app/.../layout.tsx`
 - UI は shadcn コンポーネント + Tailwind を基本とし、
   独自 CSS の乱用は避けること
 

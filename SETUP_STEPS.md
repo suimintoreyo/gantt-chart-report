@@ -10,10 +10,10 @@
 
 ## 1. Next.js プロジェクト作成
 
-- [x] `npx create-next-app@latest` でプロジェクト生成
+- [x] `npx create-next-app@latest` でプロジェクト生成（`src/` ディレクトリは使用しない設定）
 
   ```bash
-  npx create-next-app@latest gantt-progress-app     --typescript     --tailwind     --eslint     --app     --src-dir
+  npx create-next-app@latest gantt-progress-app     --typescript     --tailwind     --eslint     --app
   ```
 
 - [x] 生成されたフォルダに移動し、`npm run dev` で初期画面が表示されることを確認
@@ -80,7 +80,7 @@
 
 - 全コンポーネント追加済みのため、再実行は不要
 
-- [ ] コミット（`chore: install ui and utility libs`）
+- [x] コミット（`chore: install ui and utility libs`）
 
 ---
 
@@ -92,7 +92,7 @@
 
 - [ ] Codex に以下を依頼：
   - `ThemeProvider` コンポーネントの実装（next-themes 使用）
-  - `src/app/layout.tsx` に ThemeProvider を組み込む
+  - `app/layout.tsx` に ThemeProvider を組み込む
   - 簡単な `ThemeToggle` ボタンを作成してヘッダ等に置く
 - [ ] ダーク / ライトが切り替わることをブラウザで確認
 - [ ] コミット（`feat: add theme provider and layout`）
