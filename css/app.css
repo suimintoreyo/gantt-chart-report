@@ -74,15 +74,45 @@
 #gantt-container {
   min-height: 200px;
   overflow-x: auto;
+  background-color: #1f1f1f;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
 }
 
 #gantt-container svg {
   width: 100%;
 }
 
+.gantt .grid-background,
+.gantt .grid-header {
+  fill: #1f1f1f;
+}
+
+.gantt .grid-row {
+  fill: #1f1f1f;
+}
+
+.gantt .grid-row:not(:last-of-type) .row-line,
+.gantt .grid-header .tick line {
+  stroke: #2f2f2f;
+}
+
+.gantt .grid-header .tick text,
+.gantt .grid-row text,
+.gantt text {
+  fill: #e8e8e8;
+}
+
+.gantt .today-highlight {
+  fill: rgba(50, 115, 220, 0.12);
+}
+
 /* ガントポップアップ */
 .gantt-popup {
   padding: 0.5rem;
+  background-color: #222;
+  color: #f5f5f5;
+  border: 1px solid #2f2f2f;
 }
 
 .gantt-popup h4 {
@@ -93,4 +123,41 @@
 .gantt-popup p {
   margin: 0.25rem 0;
   font-size: 0.875rem;
+}
+
+/* モーダルのダークスタイル */
+.modal-card {
+  background-color: #1f1f1f;
+  color: #f5f5f5;
+}
+
+.modal-card-head,
+.modal-card-foot {
+  background-color: #1b1b1b;
+  border-color: #2a2a2a;
+}
+
+.modal-card-title {
+  color: #f5f5f5;
+}
+
+.modal-card-body {
+  background-color: #1f1f1f;
+  color: #f5f5f5;
+}
+
+.modal-card .label {
+  color: #e8e8e8;
+}
+
+.modal-card input,
+.modal-card textarea,
+.modal-card select {
+  background-color: #242424;
+  color: #f5f5f5;
+  border-color: #363636;
+}
+
+.modal-card .select:not(.is-multiple):not(.is-loading)::after {
+  border-color: #e8e8e8;
 }
