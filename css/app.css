@@ -75,8 +75,6 @@
   min-height: 200px;
   overflow-x: auto;
   background-color: #1f1f1f;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
 }
 
 #gantt-container svg {
@@ -84,10 +82,7 @@
 }
 
 .gantt .grid-background,
-.gantt .grid-header {
-  fill: #1f1f1f;
-}
-
+.gantt .grid-header,
 .gantt .grid-row {
   fill: #1f1f1f;
 }

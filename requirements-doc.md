@@ -29,7 +29,7 @@ project/
 │   ├── bulma.min.css
 │   ├── bulma-prefers-dark.min.css
 │   ├── frappe-gantt.min.css
-│   └── app.css
+│   └── app.css        # カスタムCSS（ダーク対応・最小限の上書きのみ）
 └── js/
     ├── frappe-gantt.min.js
     ├── state.js        # 状態管理・永続化
@@ -38,6 +38,11 @@ project/
     ├── report.js       # 進捗報告生成
     └── main.js         # メインアプリケーション
 ```
+
+### 0.3 スタイリング方針
+
+* カスタムCSSは最小限に留める（ダークテーマ対応・ガント配色・レイアウト補助のみ）
+* BulmaとFrappe Ganttのデフォルトスタイルを尊重し、再定義やリセットを避ける
 
 ---
 
