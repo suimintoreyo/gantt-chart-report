@@ -85,6 +85,7 @@ interface Task {
   projectId: string | null;
   name: string;
   assignee?: string;
+  dependsOn?: string[];
   plannedStart: string;   // YYYY-MM-DD
   plannedEnd: string;     // YYYY-MM-DD
   progress: number;       // 0-100
@@ -149,7 +150,7 @@ interface AppState {
 ### 4.1 全体レイアウト（1カラム）
 
 **Bulmaコンポーネント**を使用したシンプルな縦並びレイアウト：
-* 常時ダークテーマ（bulma-prefers-dark + カスタムCSS）
+* 常時ダークテーマ（bulma-prefers-dark + カスタムCSS。ガント領域/モーダルも暗色に統一）
 
 1. **トップヘッダー**（`.navbar`）
    * プロジェクト選択ドロップダウン
