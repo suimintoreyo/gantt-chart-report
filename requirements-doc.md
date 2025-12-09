@@ -716,3 +716,4 @@ npm install --save-dev jest
 | ダークモード実装 | 未決定 | `bulma-prefers-dark.css`またはカスタムCSS変数 |
 | 依存関係の矢印表示 | 検討中 | Frappe Ganttは対応可能 |
 | モバイル/レスポンシブ対応 | スコープ外 | デスクトップ優先、後で検討の可能性あり |
+| エクスポート/インポート機能 | スコープ外 | localStorageのみで対応、将来検討の可能性あり |
