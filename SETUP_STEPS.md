@@ -2,30 +2,30 @@
 
 ## 0. リポジトリ準備
 
-- [ ] GitHub で `gantt-progress-app`（仮）リポジトリを作成
-- [ ] WSL2 の開発用ディレクトリに clone する  
+- [x] GitHub で `gantt-progress-app`（仮）リポジトリを作成
+- [x] WSL2 の開発用ディレクトリに clone する  
       例: `~/dev/github.com/自分のアカウント/gantt-progress-app`
 
 ---
 
 ## 1. Next.js プロジェクト作成
 
-- [ ] `npx create-next-app@latest` でプロジェクト生成
+- [x] `npx create-next-app@latest` でプロジェクト生成
 
   ```bash
   npx create-next-app@latest gantt-progress-app     --typescript     --tailwind     --eslint     --app     --src-dir
   ```
 
-- [ ] 生成されたフォルダに移動し、`npm run dev` で初期画面が表示されることを確認
-- [ ] 初回コミット（`feat: init next app`）
+- [x] 生成されたフォルダに移動し、`npm run dev` で初期画面が表示されることを確認
+- [x] 初回コミット（`feat: init next app`）
 
 ---
 
 ## 2. Supabase プロジェクト & DB セットアップ
 
-- [ ] Supabase で新規プロジェクト作成
-- [ ] Project URL / anon key / DB パスワードをメモ
-- [ ] ローカルの `.env.local` に以下を設定
+- [x] Supabase で新規プロジェクト作成
+- [x] Project URL / anon key / DB パスワードをメモ
+- [x] ローカルの `.env.local` に以下を設定
 
   ```env
   NEXT_PUBLIC_SUPABASE_URL=...
@@ -33,21 +33,21 @@
   DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@.../postgres
   ```
 
-- [ ] Supabase の SQL Editor で `requirements.md` のテーブル定義をコピペして実行
+- [x] Supabase の SQL Editor で `requirements.md` のテーブル定義をコピペして実行
   - `projects`
   - `tasks`
   - `daily_snapshots`
   - `daily_task_progress`
   - （必要なら `profiles`）
-- [ ] 最初は RLS OFF でも可（後でONにするタイミングを検討）
+- [x] 最初は RLS OFF でも可（後でONにするタイミングを検討）
 
 ---
 
 ## 3. プロジェクトに要件定義と AGENTS.md を追加
 
-- [ ] `requirements.md` をレポジトリ直下に保存
-- [ ] `AGENTS.md` をレポジトリ直下に作成（このテンプレ or 調整版）
-- [ ] コミット（`docs: add requirements and AGENTS`）
+- [x] `requirements.md` をレポジトリ直下に保存
+- [x] `AGENTS.md` をレポジトリ直下に作成（このテンプレ or 調整版）
+- [x] コミット（`docs: add requirements and AGENTS`）
 
 ---
 
@@ -59,8 +59,10 @@
   npm install next-themes @supabase/supabase-js
   npm install react-hook-form zod @hookform/resolvers
   npm install date-fns
-  npm install gantt-task-react
+  npm install @svar-ui/react-gantt
   ```
+
+- React 19 環境では `gantt-task-react` が非対応のため、代替として `@svar-ui/react-gantt` を採用
 
 - [ ] shadcn/ui の初期化（CLI）
 
@@ -119,7 +121,7 @@
 
 ### 5-5. ガントチャートページ
 
-- [ ] Codex に `gantt-task-react` を使ったコンポーネントを作らせる
+- [ ] Codex に `@svar-ui/react-gantt` を使ったコンポーネントを作らせる
   - `tasks` の `planned_start_date` / `planned_end_date` / `progress` から Gantt 用データを生成
   - `/projects/[id]/gantt` で表示
 - [ ] コミット（`feat: gantt view for project`）

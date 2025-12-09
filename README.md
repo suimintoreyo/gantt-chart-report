@@ -6,7 +6,7 @@
 - 認証: Supabase Auth によるメール+パスワードログイン（未ログイン時は `/login` へリダイレクト）。
 - プロジェクト: 一覧/作成/編集/削除（`owner_id` でユーザーに紐付け）。
 - タスク: プロジェクト単位での一覧・追加・編集・削除。進捗率/ステータスのインライン編集。
-- ガントチャートビュー: `gantt-task-react` で表示（日/週/月ビュー、ステータス色分け、Today line）。MVPでは表示主体（ドラッグ編集は後続フェーズで検討）。
+- ガントチャートビュー: `@svar-ui/react-gantt` で表示（日/週/月ビュー、ステータス色分け、Today line）。`gantt-task-react` は React 19 非対応のため代替採用。MVPでは表示主体（ドラッグ編集は後続フェーズで検討）。
 - スナップショット & 差分レポート: 日次スナップショットを保存し、前日との差分から進捗レポートテキストを生成・コピー。
 - テーマ切替: `light / dark / system` の3種切替。
 
@@ -25,7 +25,7 @@
 - UI: Tailwind CSS, shadcn/ui, next-themes
 - フォーム/バリデーション: react-hook-form, Zod
 - 日付: date-fns
-- ガント: gantt-task-react
+- ガント: @svar-ui/react-gantt
 
 ## データモデル（概要）
 - `profiles`: Supabase Auth に紐づくユーザー情報（display_name, theme_preference 等）。
@@ -42,7 +42,7 @@
 ## セットアップの方向性（開発時）
 - Supabase プロジェクトを用意し、上記テーブルを作成（`ON DELETE CASCADE` で子テーブルを連鎖削除）。
 - Next.js (App Router) プロジェクトを作成し、`.env` に Supabase の URL / anon key を設定。
-- 依存インストール例: `npm install next react react-dom tailwindcss supabase-js @supabase/auth-helpers-nextjs date-fns react-hook-form zod gantt-task-react class-variance-authority lucide-react next-themes`
+- 依存インストール例: `npm install next react react-dom tailwindcss supabase-js @supabase/auth-helpers-nextjs date-fns react-hook-form zod @svar-ui/react-gantt class-variance-authority lucide-react next-themes`
 - ローカル開発: `npm run dev`
 - テスト（必要に応じて）: `npm test` または `npm run lint`
 

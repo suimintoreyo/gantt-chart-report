@@ -50,7 +50,7 @@
   - shadcn/ui
   - next-themes（テーマ管理）
 - ガントチャートライブラリ：
-  - `gantt-task-react`（React+TS向けガントチャート）
+  - `@svar-ui/react-gantt`（React 19 で利用可能なガントチャート。`gantt-task-react` は非対応のため置き換え）
 - 開発補助：
   - Codex を用いて画面・コンポーネント・ロジックのコード生成を行う
 
@@ -71,7 +71,7 @@
 - 日付ユーティリティ
   - date-fns（加算・減算・フォーマット・比較など）
 - ガントチャート表示
-  - gantt-task-react
+  - @svar-ui/react-gantt
 
 ---
 
@@ -129,7 +129,7 @@
 ### 4.5 ガントチャートビュー `/projects/[id]/gantt`
 
 - 機能
-  - gantt-task-react を利用したガントチャート表示
+  - @svar-ui/react-gantt を利用したガントチャート表示
 - 表示内容
   - 縦軸：タスク（タイトル）
   - 横軸：日付（ViewMode：日/週/月切り替え）
@@ -230,7 +230,7 @@
 
 #### 5.4.1 表示ロジック
 
-- タスクの `planned_start_date` ～ `planned_end_date` を gann-task-react の `start`, `end` にマッピング
+- タスクの `planned_start_date` ～ `planned_end_date` を @svar-ui/react-gantt の `start`, `end` にマッピング
 - `progress` を `progress` にマッピング
 - 今日の日付はコンポーネントのプロップ or 現在日時から計算
 
@@ -439,7 +439,7 @@
 - Tailwind + shadcn/ui を用いた UI レイアウト・スタイルの組み立て
 - Supabase クライアント呼び出し（CRUD）の雛形コード
 - react-hook-form + Zod を用いたフォーム実装
-- gantt-task-react を用いたガントチャート表示コンポーネントの実装
+- @svar-ui/react-gantt を用いたガントチャート表示コンポーネントの実装
 - 日次スナップショット比較ロジックのコード化（仕様に沿って）
 
 ---

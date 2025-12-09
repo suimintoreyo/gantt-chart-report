@@ -37,7 +37,7 @@
 - ライブラリ:
   - react-hook-form + Zod（フォーム & バリデーション）
   - date-fns（日付操作）
-  - gantt-task-react（ガントチャート表示）
+  - @svar-ui/react-gantt（ガントチャート表示。React 19 非対応の `gantt-task-react` の代替）
 
 `requirements.md` に詳細な仕様・データモデルがあります。  
 実装時は、必ず `requirements.md` を前提としてコードを生成してください。
@@ -96,7 +96,7 @@
 
 ### 4.4 ガントチャート表示ロジック
 
-- `gantt-task-react` を用いてガントチャートを表示するコンポーネントを作成
+- `@svar-ui/react-gantt` を用いてガントチャートを表示するコンポーネントを作成
 - `tasks` テーブルの `planned_start_date`, `planned_end_date`, `progress` を用いて
   Gantt の `Task` 型にマッピングする処理を実装
 
