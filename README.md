@@ -1,39 +1,51 @@
-# ガントチャートレポート
+# ガントチャート進捗報告アプリ
 
-ブラウザだけで動くガントチャート型の進捗管理・報告アプリを実装するリポジトリです。タスクバーをマウスで直接操作でき、ローカルストレージに保存しつつ、進捗報告文を自動生成することを狙います。
+`requirements.md` をベースにした Next.js + Supabase 構成の進捗管理アプリ（MVP 要件）。ガントチャートでタスクを可視化し、日次スナップショットと差分レポートを生成することを目的とします。
 
-## 想定する主な機能
-- ガントチャート: タスクバーをドラッグして移動、左右端をドラッグして開始/終了日をリサイズ。今日のライン表示や遅延タスクの強調表示を持つ。
-- タスク一覧テーブル: インライン編集、ソート/簡易フィルタ、行選択とガント連動、`+ 新規タスク` 行での追加、Delete で削除。
-- 進捗報告文生成: 期間・プロジェクト・一時タスク含有を選択できるモーダル。生成テキストをコピー可能。
-- 作業ログ/一時タスク: 下部タブで一覧・追加・編集・削除。フローティング `＋一時タスク` ボタンからクイック追加。
-- キーボードショートカット: `Ctrl+S` 保存、`Ctrl+F` 検索、`N` 新規行フォーカス、`Ctrl+Enter` モーダル決定、`Ctrl+Z/Y` Undo/Redo。IME入力中は誤作動しないよう配慮。
-- データ永続化: `AppState` を localStorage に保存。自動保存（ディレイあり）と手動保存の両方を備える。
+## 現行MVPで目指すこと
+- 認証: Supabase Auth によるメール+パスワードログイン（未ログイン時は `/login` へリダイレクト）。
+- プロジェクト: 一覧/作成/編集/削除（`owner_id` でユーザーに紐付け）。
+- タスク: プロジェクト単位での一覧・追加・編集・削除。進捗率/ステータスのインライン編集。
+- ガントチャートビュー: `gantt-task-react` で表示（日/週/月ビュー、ステータス色分け、Today line）。MVPでは表示主体（ドラッグ編集は後続フェーズで検討）。
+- スナップショット & 差分レポート: 日次スナップショットを保存し、前日との差分から進捗レポートテキストを生成・コピー。
+- テーマ切替: `light / dark / system` の3種切替。
 
-## 画面構成（想定）
-- ヘッダー: プロジェクト選択、期間プリセット、簡易サマリー、`進捗報告文生成` ボタン。
-- 中央左右: 左にタスク一覧、右にガントチャート（タスク行とバーが同期）。
-- 下部タブ: `作業ログ` と `一時タスク`。
-- 右側パネル: 選択タスクの詳細/進捗編集。
-- フローティングボタン: `＋一時タスク` でどこからでも追加。
+## 主要画面（URLは暫定）
+- `/login`: メール+パスワードでログイン。
+- `/`: ダッシュボード。自分のプロジェクト一覧とテーマ切替。
+- `/projects`: プロジェクト一覧と新規作成。
+- `/projects/[id]`: プロジェクト概要。タブでガント/タスク/スナップショットに切替。
+  - `/projects/[id]/gantt`: ガントチャート表示（表示優先）。
+  - `/projects/[id]/tasks`: タスクテーブル（CRUD、進捗・ステータスの即時編集）。
+  - `/projects/[id]/snapshots`: 日次スナップショット一覧と差分レポート生成。
 
-## データモデルと保存
-- `AppState` には `projects`, `tasks`, `workLogs`, `adhocTasks`, `uiPreferences` を保持。
-- 日付は `YYYY-MM-DD` 文字列。進捗は 0–100 の数値。
-- 保存キー例: `ganttProgressAppState`。保存/読み込み時はエラーハンドリングと将来のマイグレーションフックを用意。
+## 技術スタック
+- 言語/フレームワーク: TypeScript, Next.js 14+ (App Router), React
+- ホスティング/バックエンド: Vercel, Supabase (PostgreSQL + Auth)
+- UI: Tailwind CSS, shadcn/ui, next-themes
+- フォーム/バリデーション: react-hook-form, Zod
+- 日付: date-fns
+- ガント: gantt-task-react
 
-## 動作環境
-- フロントエンドのみ（HTML/CSS/Vanilla JS、フレームワークなし）。
-- サーバー不要、`index.html` をブラウザで開くだけで動作する想定。
-- データは localStorage に保存されオフラインで利用可能。
+## データモデル（概要）
+- `profiles`: Supabase Auth に紐づくユーザー情報（display_name, theme_preference 等）。
+- `projects`: `owner_id`, `name`, `description`, `start_date`, `end_date` など。
+- `tasks`: プロジェクト内のタスク。`planned_start_date/end_date`, `progress`, `status`, `assignee_name` など。
+- `daily_snapshots`: 1プロジェクト×1日1件のスナップショット。
+- `daily_task_progress`: スナップショット時点のタスク進捗/ステータス。
 
-## 開発・テスト
-- 主要ロジックのユニットテストに Jest を使用。
-- セットアップ: `npm install`（未作成なら `npm init -y` で初期化）。
-- テスト実行: `npm test`。
+## 非機能メモ
+- Hobbyプラン（Vercel/Supabase）内で運用できる規模を想定。
+- タスク数数百件でもガント/一覧が実用的な表示速度を目標。
+- Row Level Security は段階的導入を検討。
 
-## ファイル構成の目安
-- `index.html` / `style.css` / `main.js`（または `state.js`, `gantt.js`, `report.js` などの分割モジュール）
-- `__tests__/` 配下にテストファイル、必要に応じて `jest.config.*`
-- `package.json` に `test` スクリプトを定義
-- `requirements.md` に要件定義書を管理（詳細や更新履歴をここに追記予定）
+## セットアップの方向性（開発時）
+- Supabase プロジェクトを用意し、上記テーブルを作成（`ON DELETE CASCADE` で子テーブルを連鎖削除）。
+- Next.js (App Router) プロジェクトを作成し、`.env` に Supabase の URL / anon key を設定。
+- 依存インストール例: `npm install next react react-dom tailwindcss supabase-js @supabase/auth-helpers-nextjs date-fns react-hook-form zod gantt-task-react class-variance-authority lucide-react next-themes`
+- ローカル開発: `npm run dev`
+- テスト（必要に応じて）: `npm test` または `npm run lint`
+
+## ドキュメント
+- 詳細要件・画面/データ仕様: `requirements.md`
+- 運用ガイドライン: `AGENTS.md`
