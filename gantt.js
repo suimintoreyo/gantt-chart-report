@@ -34,17 +34,20 @@ function createHandle(side) {
   return handle;
 }
 
+function updateBarPosition(bar, task, chartStart) {
+  const offset = dateDiffInDays(chartStart, task.plannedStart) * DAY_WIDTH;
+  const width = (dateDiffInDays(task.plannedStart, task.plannedEnd) + 1) * DAY_WIDTH;
+  bar.style.left = `${offset}px`;
+  bar.style.width = `${width}px`;
+  bar.title = `${task.name} (${task.progress}%)`;
+}
+
 function createBar(task, chartStart, onDragStart) {
   const bar = document.createElement('div');
   bar.className = `gantt-bar status-${task.status}`;
   bar.dataset.taskId = task.id;
 
-  const offset = dateDiffInDays(chartStart, task.plannedStart) * DAY_WIDTH;
-  const width = (dateDiffInDays(task.plannedStart, task.plannedEnd) + 1) * DAY_WIDTH;
-
-  bar.style.left = `${offset}px`;
-  bar.style.width = `${width}px`;
-  bar.title = `${task.name} (${task.progress}%)`;
+  updateBarPosition(bar, task, chartStart);
 
   bar.appendChild(createHandle('left'));
 
@@ -98,12 +101,13 @@ export function renderGantt(container, tasks, onTaskChange) {
   const rowsWrapper = document.createElement('div');
   rowsWrapper.className = 'gantt-rows';
 
-  const dragState = { task: null, mode: null, startX: 0, originalStart: null, originalEnd: null };
+  const dragState = { task: null, mode: null, startX: 0, originalStart: null, originalEnd: null, bar: null };
 
   const onDragStart = (event, task) => {
     const target = event.target;
     const isHandle = target.dataset.handle;
     dragState.task = task;
+    dragState.bar = event.currentTarget;
     dragState.mode = isHandle ? `resize-${isHandle}` : 'move';
     dragState.startX = event.touches ? event.touches[0].clientX : event.clientX;
     dragState.originalStart = task.plannedStart;
@@ -134,11 +138,13 @@ export function renderGantt(container, tasks, onTaskChange) {
         task.plannedEnd = newEnd;
       }
     }
+    updateBarPosition(dragState.bar, task, start);
     onTaskChange(task);
   };
 
   const onDragEnd = () => {
     dragState.task = null;
+    dragState.bar = null;
   };
 
   ['mousemove', 'touchmove'].forEach((ev) => document.addEventListener(ev, onDragMove));
