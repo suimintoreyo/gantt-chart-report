@@ -99,8 +99,14 @@
     }
   }
 
+  function normalizeRange(from, to) {
+    if (!from || !to) return { from, to };
+    return from <= to ? { from, to } : { from: to, to: from };
+  }
+
   function getTasksInPeriod(tasks, from, to) {
-    return tasks.filter((task) => task.plannedStart <= to && task.plannedEnd >= from);
+    const range = normalizeRange(from, to);
+    return tasks.filter((task) => task.plannedStart <= range.to && task.plannedEnd >= range.from);
   }
 
   function getDelayedTasks(tasks, today) {
@@ -179,7 +185,7 @@
   function renderTaskList() {
     if (!elements.taskListBody) return;
     elements.taskListBody.innerHTML = '';
-    appState.tasks
+    [...appState.tasks]
       .sort((a, b) => a.plannedStart.localeCompare(b.plannedStart))
       .forEach((task) => {
         const row = document.createElement('div');
@@ -226,7 +232,7 @@
     grid.className = 'gantt-grid';
     grid.appendChild(header);
 
-    appState.tasks
+    [...appState.tasks]
       .sort((a, b) => a.plannedStart.localeCompare(b.plannedStart))
       .forEach((task) => {
         const row = document.createElement('div');
@@ -279,7 +285,10 @@
   function updateTask(taskId, updates) {
     const idx = appState.tasks.findIndex((t) => t.id === taskId);
     if (idx === -1) return;
-    appState.tasks[idx] = { ...appState.tasks[idx], ...updates };
+    const nextTask = { ...appState.tasks[idx], ...updates };
+    const didChange = Object.keys(nextTask).some((key) => nextTask[key] !== appState.tasks[idx][key]);
+    if (!didChange) return;
+    appState.tasks[idx] = nextTask;
     saveState(appState);
     renderTaskList();
     renderGantt();

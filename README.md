@@ -15,6 +15,8 @@ A lightweight, framework-free Gantt chart app that supports direct mouse editing
 - **Vanilla stack**: pure HTML/CSS/JS—no build step required.
 
 ## Testing
+Node is **only required for running the Jest suite**; the app itself runs directly in the browser without any build step.
+
 Jest tests cover persistence, date helpers, and report generation.
 
 ```bash
